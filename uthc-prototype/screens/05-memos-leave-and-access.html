@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>UTHC Scheduling — 05. Memos, Staff on Leave & Staff Access</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg-2:#fff; --bg-3:#ebe9e3; --border:#ddd9d0;
+  --text-1:#2b2a27; --text-2:#6b6962; --text-3:#9a978d;
+  --blue:#185FA5; --blue-dark:#0C447C; --blue-light:#E6F1FB;
+  --green:#27500A; --green-light:#EAF3DE; --green-mid:#97C459;
+  --amber:#633806; --amber-light:#FAEEDA;
+  --red:#791F1F; --red-light:#FCEBEB;
+  --teal:#085041; --teal-light:#E1F5EE;
+  --pink:#72243E; --pink-light:#FBEAF0;
+  --radius-md:8px; --radius-lg:14px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:var(--text-1);background:var(--bg-3);font-size:13px}
+.note{background:#FFF7E0;border:1px solid #E8D48A;border-radius:var(--radius-md);padding:10px 14px;font-size:12px;color:#6b5610;margin:14px auto;max-width:1000px}
+.stage{min-height:90vh;display:flex;flex-direction:column;align-items:center;padding:1.5rem}
+.tabs{display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap;justify-content:center}
+.tabbtn{padding:5px 14px;border-radius:var(--radius-md);border:1px solid var(--border);font-size:12px;cursor:pointer;font-weight:500;background:var(--bg-2);color:var(--text-2)}
+.tabbtn.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+.screen{display:none;width:100%;justify-content:center}
+.screen.active{display:flex}
+.dash{width:100%;max-width:780px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+.dtop{display:flex;align-items:center;gap:8px;padding:.8rem 1.1rem;border-bottom:1px solid var(--border)}
+.dtitle{font-size:15px;font-weight:600}
+.dsub{font-size:11px;color:var(--text-3)}
+.dbody{padding:1.1rem}
+.mbtn{padding:5px 11px;border-radius:var(--radius-md);border:1px solid #ccc;background:var(--bg-2);font-size:11px;cursor:pointer}
+.mbtn:hover{background:var(--bg-3)}
+.mbtn.pri{background:var(--blue);color:#fff;border-color:var(--blue)}
+.mbtn.amber{background:var(--amber-light);color:var(--amber);border-color:#EF9F27}
+.mbtn.red{background:var(--red-light);color:var(--red);border-color:#F09595}
+.mbtn.grn{background:var(--green-light);color:var(--green);border-color:var(--green-mid)}
+.info-box{background:var(--blue-light);color:var(--blue-dark);border:1px solid #B5D4F4;border-radius:var(--radius-md);padding:8px 11px;font-size:12px;margin-bottom:.8rem}
+
+.memo-card{background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:.9rem;margin-bottom:.7rem}
+.memo-type{display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:3px 9px;border-radius:9px;font-weight:600;margin-bottom:.5rem}
+.memo-type.escort{background:var(--teal-light);color:var(--teal)}
+.memo-type.transport{background:var(--blue-light);color:var(--blue-dark)}
+.memo-title{font-size:13px;font-weight:600;margin-bottom:.5rem}
+.memo-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px;margin-bottom:.5rem}
+.memo-field{background:var(--bg-3);border-radius:var(--radius-md);padding:7px 9px}
+.memo-label{font-size:10px;color:var(--text-2);margin-bottom:2px}
+.memo-val{font-weight:600}
+
+table{width:100%;font-size:12px;border-collapse:collapse}
+th{text-align:left;padding:6px 7px;font-size:11px;font-weight:600;color:var(--text-2);background:var(--bg-3)}
+td{padding:7px 7px;border-bottom:1px solid var(--border)}
+.badge{font-size:10px;padding:2px 7px;border-radius:4px;font-weight:600}
+.b-mat{background:var(--pink-light);color:var(--pink)}
+.b-cnesst{background:var(--amber-light);color:var(--amber)}
+.b-sick{background:var(--red-light);color:var(--red)}
+.b-vac{background:var(--green-light);color:var(--green)}
+.b-active{background:var(--green-light);color:var(--green)}
+.b-suspended{background:var(--amber-light);color:var(--amber)}
+.b-terminated{background:var(--red-light);color:var(--red)}
+
+.search-bar{display:flex;align-items:center;gap:6px;background:var(--bg-3);border-radius:var(--radius-md);padding:7px 11px;margin-bottom:.8rem}
+.search-bar input{flex:1;border:none;background:none;font-size:12px;outline:none}
+.row-suspended{background:#FFFBF0}
+.row-terminated{background:#FEF5F5;opacity:.7}
+</style>
+</head>
+<body>
+
+<div class="note">PROTOTYPE FILE — visual mockup only. See FEATURE_SPEC.md §8 (Memos), §9 (Staff on Leave), §2 (Staff Access) for full behavior rules.</div>
+
+<div class="stage">
+<div class="tabs">
+  <button class="tabbtn on" onclick="showS('memos',this)">1. Memos — escorts & transport</button>
+  <button class="tabbtn" onclick="showS('leave',this)">2. Staff on leave (management-only)</button>
+  <button class="tabbtn" onclick="showS('access',this)">3. Staff & access control</button>
+</div>
+
+<!-- MEMOS -->
+<div id="screen-memos" class="screen active">
+  <div class="dash">
+    <div class="dtop"><div><div class="dtitle">Memos — Northern escorts & transportation</div><div class="dsub">Management & scheduler entries</div></div>
+      <button class="mbtn pri" style="margin-left:auto" onclick="alert('Opens a form: memo type, staff assigned, date, number of youth, destination, start/end time, notes.')">+ New memo</button>
+    </div>
+    <div class="dbody" id="memo-list"></div>
+  </div>
+</div>
+
+<!-- STAFF ON LEAVE -->
+<div id="screen-leave" class="screen">
+  <div class="dash">
+    <div class="dtop"><div><div class="dtitle">Staff on leave</div><div class="dsub">Full leave tracker — management/scheduler only</div></div>
+      <button class="mbtn pri" style="margin-left:auto" onclick="alert('Opens a form: employee, leave type, date started, expected return, progressive return (yes/no), progressive return detail if yes.')">+ Add leave record</button>
+    </div>
+    <div class="dbody">
+      <div class="info-box">🔒 Never visible to employees in general. Exception: the specific employee on leave sees their OWN progressive return + regular schedule, but no one else's leave info.</div>
+      <table>
+        <thead><tr><th>Name</th><th>Type</th><th>Started</th><th>Return</th><th>Progressive return</th><th></th></tr></thead>
+        <tbody>
+          <tr><td>Sergio De Luca</td><td><span class="badge b-vac">Vacation</span></td><td>Jun 15</td><td>Jun 20</td><td>No</td><td><button class="mbtn">Edit</button></td></tr>
+          <tr><td>Ashley Zycholtz</td><td><span class="badge b-sick">Sick leave</span></td><td>Jun 10</td><td>Jul 15</td><td>Yes — 2 shifts/wk for 2 wks, then full</td><td><button class="mbtn">Edit</button></td></tr>
+          <tr><td>Darius Branch</td><td><span class="badge b-cnesst">CNESST leave</span></td><td>May 20</td><td>Aug 1</td><td>Yes — 3 shifts/wk for 4 wks, reassessed</td><td><button class="mbtn">Edit</button></td></tr>
+          <tr><td>Stephanie George</td><td><span class="badge b-mat">Maternity leave</span></td><td>Mar 1</td><td>Feb 28, 2027</td><td>No</td><td><button class="mbtn">Edit</button></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- STAFF & ACCESS -->
+<div id="screen-access" class="screen">
+  <div class="dash">
+    <div class="dtop"><div><div class="dtitle">Staff & access</div><div class="dsub">Suspend, terminate, or reinstate login access</div></div></div>
+    <div class="dbody">
+      <div class="info-box">ℹ️ Suspending or terminating an employee immediately revokes their login. Reinstating restores it instantly. Historical schedule data is always retained regardless of status.</div>
+      <div class="search-bar">🔍 <input type="text" placeholder="Search staff by name, unit, or role..."></div>
+      <table>
+        <thead><tr><th>Name</th><th>Role / Unit</th><th>App access</th><th>Action</th></tr></thead>
+        <tbody>
+          <tr><td>Gilles Lezi</td><td>Educator FT · Boys</td><td><span class="badge b-active">Active</span></td><td><button class="mbtn amber">Suspend</button> <button class="mbtn red">Terminate</button></td></tr>
+          <tr class="row-suspended"><td>Wesley Thomas<div style="font-size:9px;color:var(--text-3)">Pending HR review · since Jun 10</div></td><td>Educator TFT · Girls</td><td><span class="badge b-suspended">Suspended</span></td><td><button class="mbtn grn">Reinstate</button> <button class="mbtn red">Terminate</button></td></tr>
+          <tr class="row-terminated"><td>Jalen Matandi<div style="font-size:9px;color:var(--text-3)">Resigned · since May 30</div></td><td>IA PT · Girls</td><td><span class="badge b-terminated">Terminated</span></td><td><button class="mbtn grn">Reinstate</button></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+</div>
+<script>
+const memos=[
+  {type:'escort',staff:"Mark D'Agostino",date:'Jun 16, 2026',youth:2,dest:'Kuujjuaq',start:'06:00',end:'18:00',notes:'Medical appointment escort. Return flight booked for same day.'},
+  {type:'transport',staff:'Greg Page',date:'Jun 17, 2026',youth:1,dest:'Local — clinic',start:'12:00',end:'15:00',notes:'Agency staff (Ahmad*) to arrive 1hr before appointment.'},
+  {type:'escort',staff:'Keith Burnett',date:'Jun 25, 2026',youth:3,dest:'Montreal',start:'05:30',end:'22:00',notes:'Court appearance escort. Overnight stay required, hotel booked.'},
+];
+document.getElementById('memo-list').innerHTML=memos.map(m=>`
+  <div class="memo-card">
+    <span class="memo-type ${m.type}">${m.type==='escort'?'✈️ Northern escort':'🚌 Transportation shift'}</span>
+    <div class="memo-title">${m.staff} — ${m.date}</div>
+    <div class="memo-grid">
+      <div class="memo-field"><div class="memo-label">Number of youth</div><div class="memo-val">${m.youth}</div></div>
+      <div class="memo-field"><div class="memo-label">Destination / community</div><div class="memo-val">${m.dest}</div></div>
+      <div class="memo-field"><div class="memo-label">Start time</div><div class="memo-val">${m.start}</div></div>
+      <div class="memo-field"><div class="memo-label">End time</div><div class="memo-val">${m.end}</div></div>
+    </div>
+    <div style="font-size:12px;color:var(--text-2)">${m.notes}</div>
+  </div>
+`).join('');
+
+function showS(id,btn){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+  document.querySelectorAll('.tabbtn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+}
+</script>
+</body>
+</html>

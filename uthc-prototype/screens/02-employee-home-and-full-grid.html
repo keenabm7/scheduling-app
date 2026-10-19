@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>UTHC Scheduling — 02. Employee View & Full Schedule Grid</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg-1:#f4f3ef; --bg-2:#fff; --bg-3:#ebe9e3;
+  --border:#ddd9d0; --text-1:#2b2a27; --text-2:#6b6962; --text-3:#9a978d;
+  --blue:#185FA5; --blue-dark:#0C447C; --blue-light:#E6F1FB;
+  --green:#27500A; --green-light:#EAF3DE;
+  --amber:#633806; --amber-light:#FAEEDA;
+  --red:#791F1F; --red-light:#FCEBEB;
+  --teal:#085041; --teal-light:#E1F5EE;
+  --purple:#5B2196; --purple-light:#F3E8FF;
+  --radius-md:8px; --radius-lg:14px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:var(--text-1);background:var(--bg-3);font-size:12px}
+.note{background:#FFF7E0;border:1px solid #E8D48A;border-radius:var(--radius-md);padding:10px 14px;font-size:12px;color:#6b5610;margin:14px auto;max-width:1000px}
+.stage{min-height:90vh;display:flex;flex-direction:column;align-items:center;padding:1.5rem}
+.tabs{display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap;justify-content:center}
+.tabbtn{padding:5px 14px;border-radius:var(--radius-md);border:1px solid var(--border);font-size:12px;cursor:pointer;font-weight:500;background:var(--bg-2);color:var(--text-2)}
+.tabbtn.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+.screen{display:none;width:100%;justify-content:center}
+.screen.active{display:flex}
+.dash{width:100%;max-width:980px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;display:flex;flex-direction:column}
+.dtop{display:flex;align-items:center;gap:8px;padding:.7rem 1rem;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.dtitle{font-size:14px;font-weight:600}
+.dsub{font-size:11px;color:var(--text-3)}
+.mbtn{padding:5px 10px;border-radius:var(--radius-md);border:1px solid #ccc;background:var(--bg-2);font-size:11px;cursor:pointer}
+.mbtn:hover{background:var(--bg-3)}
+.mbtn.pri{background:var(--blue);color:#fff;border-color:var(--blue)}
+
+.sched-tabbar{display:flex;gap:2px;padding:0 1rem;background:var(--bg-2);border-bottom:1px solid var(--border);overflow-x:auto;flex-shrink:0}
+.sched-tab{padding:8px 12px;font-size:12px;font-weight:500;color:var(--text-2);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;display:flex;align-items:center;gap:5px}
+.sched-tab.on{color:var(--blue);border-bottom-color:var(--blue)}
+.home-pin{font-size:11px;color:var(--amber);cursor:pointer}
+.home-pin.is-home{color:var(--blue)}
+.home-banner{background:var(--blue-light);color:var(--blue-dark);border:1px solid #B5D4F4;border-radius:var(--radius-md);padding:8px 10px;font-size:12px;margin-bottom:.7rem;display:flex;gap:6px;align-items:center}
+.home-banner button{margin-left:auto}
+
+.info-box{background:var(--blue-light);color:var(--blue-dark);border:1px solid #B5D4F4;border-radius:var(--radius-md);padding:7px 10px;font-size:11px;margin:.6rem 1rem;display:flex;gap:5px}
+
+.sched-scroll{max-height:480px;overflow-y:auto;padding:.7rem}
+.week-block-label{font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.04em;padding:6px 4px 4px;position:sticky;top:0;background:var(--bg-2);z-index:5}
+.week-block-label.pp2{color:#72243E}
+table.sched{border-collapse:collapse;font-size:10px;min-width:100%;margin-bottom:.4rem}
+table.sched th,table.sched td{border:1px solid var(--border)}
+table.sched th{background:var(--bg-3);font-weight:600;font-size:9px;color:var(--text-2);text-align:center;padding:3px 1px;position:sticky;top:22px;z-index:4}
+th.nh{text-align:left;padding:3px 6px;width:108px;min-width:108px;max-width:108px;position:sticky;left:0;z-index:6;background:var(--bg-3)}
+td.nh{text-align:left;padding:3px 6px;width:108px;min-width:108px;max-width:108px;font-weight:600;position:sticky;left:0;background:var(--bg-2);z-index:3;font-size:10px;line-height:1.15;overflow:hidden}
+td.nh .nm{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+td.nh .mt{font-size:8px;color:var(--text-3);font-weight:400}
+td.std{width:36px;padding:1px;text-align:center}
+.cell{display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:3px;font-size:9px;font-weight:600;padding:1px;min-height:16px;line-height:1.1}
+.J1{background:#DBEAFE;color:#1e40af}
+.J2{background:#EFF6FF;color:#1e40af}
+.S1{background:#FEF3C7;color:#92400e}
+.S2{background:#FFF7ED;color:#92400e}
+.N{background:#EEEDFE;color:#3C3489}
+.OT{background:#ADD8E6;color:#0C447C;font-weight:700}
+.TRAN{background:var(--blue);color:#fff}
+.ESC{background:var(--teal);color:#fff}
+.V{background:var(--green-light);color:var(--green)}
+.empty{background:var(--bg-3);color:var(--text-3);font-weight:400}
+.cell.clickable{cursor:pointer}
+.cell.clickable:hover{outline:1.5px solid var(--blue)}
+.cover-name{font-size:7px;font-style:italic;color:inherit;opacity:.9;white-space:nowrap;line-height:1}
+.row-mine td.nh{background:#FFF9E6}
+.legend{display:flex;flex-wrap:wrap;gap:8px;padding:.6rem 1rem;border-top:1px solid var(--border);font-size:10px}
+.lg{display:flex;align-items:center;gap:4px}
+.lgdot{width:18px;height:13px;border-radius:3px;font-size:8px;display:flex;align-items:center;justify-content:center;font-weight:600}
+
+.modal-bg{display:none;position:absolute;inset:0;background:rgba(0,0,0,.35);align-items:center;justify-content:center;z-index:50}
+.modal-bg.open{display:flex}
+.modal{background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.1rem;width:380px;max-width:94%}
+.mtitle{font-size:14px;font-weight:600;margin-bottom:.7rem;display:flex;justify-content:space-between;align-items:center}
+.mx{cursor:pointer;color:var(--text-3);font-size:18px}
+.deny{text-align:center;padding:2rem 1rem;color:var(--text-2)}
+.los-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px}
+.los-field{background:var(--bg-3);border-radius:var(--radius-md);padding:7px 9px}
+.los-label{font-size:10px;color:var(--text-2);margin-bottom:2px}
+.los-val{font-weight:600}
+</style>
+</head>
+<body>
+
+<div class="note">PROTOTYPE FILE — visual mockup only. No real backend/auth/data persistence. See FEATURE_SPEC.md §3, §5 for full behavior rules on schedules and employee home-screen pinning.</div>
+
+<div class="stage">
+<div class="tabs">
+  <button class="tabbtn on" onclick="showS('emp-home',this)">1. Employee home — 4 schedules, pin a default</button>
+  <button class="tabbtn" onclick="showS('full-grid-emp',this)">2. Full 4-week grid — employee view</button>
+  <button class="tabbtn" onclick="showS('full-grid-mgmt',this)">3. Full 4-week grid — management view</button>
+</div>
+
+<!-- EMPLOYEE HOME WITH 4 PINNABLE SCHEDULE TABS -->
+<div id="screen-emp-home" class="screen active">
+  <div class="dash">
+    <div class="dtop"><div class="dtitle">Your schedules</div><div class="dsub" style="margin-left:6px">Landing page right after sign-in</div></div>
+    <div class="sched-tabbar" id="emp-tabbar"></div>
+    <div id="emp-panels"></div>
+  </div>
+</div>
+
+<!-- FULL GRID — EMPLOYEE -->
+<div id="screen-full-grid-emp" class="screen">
+  <div class="dash">
+    <div class="dtop"><div class="dtitle">Boys IA — Day/Evening</div><div class="dsub">Full 4-week schedule · all staff · compact name column</div></div>
+    <div class="info-box">ℹ️ Logged in as Steven Yearwood. Loan of Service never appears here — that's management-only. Transport/escort cells show the covering staff's name; only the assigned employee or management can open the full detail.</div>
+    <div class="sched-scroll" id="emp-grid-scroll"></div>
+    <div class="legend">
+      <div class="lg"><div class="lgdot J1">J1</div>Day shift</div>
+      <div class="lg"><div class="lgdot S1">S1</div>Evening shift</div>
+      <div class="lg"><div class="lgdot N">N</div>Overnight</div>
+      <div class="lg"><div class="lgdot OT">OT</div>Overtime</div>
+      <div class="lg"><div class="lgdot TRAN">TRAN</div>Transport (click own shift for detail)</div>
+      <div class="lg"><div class="lgdot ESC">ESC</div>Escort (click own shift for detail)</div>
+    </div>
+  </div>
+</div>
+
+<!-- FULL GRID — MANAGEMENT -->
+<div id="screen-full-grid-mgmt" class="screen">
+  <div class="dash">
+    <div class="dtop"><div class="dtitle">Boys IA — Day/Evening</div><div class="dsub">Management view — same grid, full click access to every cell</div></div>
+    <div class="info-box">ℹ️ Management can open any employee's TRAN/ESC detail. Loan of Service still lives on its own dedicated tab, not on this shared grid.</div>
+    <div class="sched-scroll" id="mgmt-grid-scroll"></div>
+    <div class="legend">
+      <div class="lg"><div class="lgdot J1">J1</div>Day shift</div>
+      <div class="lg"><div class="lgdot S1">S1</div>Evening shift</div>
+      <div class="lg"><div class="lgdot N">N</div>Overnight</div>
+      <div class="lg"><div class="lgdot OT">OT</div>Overtime</div>
+      <div class="lg"><div class="lgdot TRAN">TRAN</div>Transport</div>
+      <div class="lg"><div class="lgdot ESC">ESC</div>Escort</div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<div id="memo-modal" class="modal-bg">
+  <div class="modal">
+    <div class="mtitle"><span id="memo-modal-title">Transportation shift</span><span class="mx" onclick="closeModal('memo-modal')">×</span></div>
+    <div class="los-grid" id="memo-modal-body"></div>
+    <button class="mbtn" style="margin-top:.7rem;width:100%" onclick="closeModal('memo-modal')">Close</button>
+  </div>
+</div>
+<div id="denied-modal" class="modal-bg">
+  <div class="modal">
+    <div class="deny">🔒<div style="font-weight:600;margin:6px 0 4px">Private to this employee</div><div style="font-size:12px">Transport/escort detail is only visible to the employee involved and to management.</div></div>
+    <button class="mbtn" style="margin-top:.5rem;width:100%" onclick="closeModal('denied-modal')">Close</button>
+  </div>
+</div>
+
+<script>
+/* ---------- EMPLOYEE HOME: 4 PINNABLE SCHEDULES ---------- */
+const homeSchedules=[
+  {id:'boys-ed',label:'Boys Educators',rows:[
+    {name:'Gilles Lezi',meta:'FT',cells:['S1','','S1','','','','S/T']},
+    {name:'Eddy Bathalien',meta:'FT',cells:['J2','','','','J2','','J/T']},
+  ]},
+  {id:'girls-ed',label:'Girls Educators',rows:[
+    {name:'Kerwin Guy-Roach',meta:'TFT',cells:['S2','','S1','','','S/T','S1']},
+    {name:'Wesley Thomas',meta:'TFT',cells:['S1','','S1','','','S/T','']},
+  ]},
+  {id:'boys-ia',label:'Boys IA — Day/Eve',rows:[
+    {name:"Mark D'Agostino",meta:'FT',cells:['S','','S','','S','','S']},
+    {name:'Greg Page',meta:'FT',cells:['','OT','','TRAN','','','']},
+  ]},
+  {id:'girls-ia',label:'Girls IA — Day/Eve',rows:[
+    {name:'Zakary Hudon',meta:'TFT',cells:['S','','S','','','S','']},
+    {name:'Elie Alette',meta:'PT',cells:['J','','','J','','S','']},
+  ]},
+];
+let homePinned='boys-ed';
+let homeActive='boys-ed';
+
+function homeCellClass(v){
+  if(!v) return 'empty';
+  if(v==='OT') return 'OT';
+  if(v==='TRAN') return 'TRAN';
+  if(v.includes('S')) return 'S1';
+  return 'J1';
+}
+function buildHomeTable(s){
+  const days=['Sun 14','Mon 15','Tue 16','Wed 17','Thu 18','Fri 19','Sat 20'];
+  let h='<table class="sched"><thead><tr><th class="nh">Staff</th>';
+  days.forEach(d=>h+='<th>'+d+'</th>');
+  h+='</tr></thead><tbody>';
+  s.rows.forEach(r=>{
+    h+='<tr><td class="nh"><span class="nm">'+r.name+'</span><span class="mt">'+r.meta+'</span></td>';
+    r.cells.forEach(c=>{ h+='<td class="std"><div class="cell '+homeCellClass(c)+'">'+(c||'—')+'</div></td>'; });
+    h+='</tr>';
+  });
+  return h+'</tbody></table>';
+}
+function renderHome(){
+  document.getElementById('emp-tabbar').innerHTML=homeSchedules.map(s=>{
+    const isHome=s.id===homePinned;
+    return '<div class="sched-tab'+(s.id===homeActive?' on':'')+'" onclick="switchHome(\''+s.id+'\')">'+s.label+
+      ' <span class="home-pin'+(isHome?' is-home':'')+'" title="'+(isHome?'This is your home screen':'Set as home screen')+'" onclick="event.stopPropagation();setHome(\''+s.id+'\')">'+(isHome?'📌':'📍')+'</span></div>';
+  }).join('');
+  document.getElementById('emp-panels').innerHTML=homeSchedules.map(s=>{
+    let banner='';
+    if(s.id===homeActive){
+      if(s.id===homePinned) banner='<div class="home-banner">📌 This is your home screen — you\'ll see it every time you log in.</div>';
+      else banner='<div class="home-banner">📍 Viewing this schedule. Your home screen is currently <strong>'+homeSchedules.find(x=>x.id===homePinned).label+'</strong>. <button class="mbtn" onclick="setHome(\''+s.id+'\')">Make this my home screen</button></div>';
+    }
+    return '<div style="display:'+(s.id===homeActive?'block':'none')+';padding:1rem" id="home-panel-'+s.id+'">'+banner+buildHomeTable(s)+'</div>';
+  }).join('');
+}
+function switchHome(id){homeActive=id;renderHome();}
+function setHome(id){homePinned=id;renderHome();}
+renderHome();
+
+/* ---------- FULL 4-WEEK GRID, ALL STAFF, TRAN/ESC CLICKABLE ---------- */
+const WEEKS=[
+  {label:'PAY PERIOD 07 — WEEK 1 (Jun 14–20)',cls:'',days:['S14','M15','T16','W17','T18','F19','S20']},
+  {label:'PAY PERIOD 07 — WEEK 2 (Jun 21–27)',cls:'',days:['S21','M22','T23','W24','T25','F26','S27']},
+  {label:'PAY PERIOD 08 — WEEK 3 (Jun 28–Jul 4)',cls:'pp2',days:['S28','M29','T30','W1','T2','F3','S4']},
+  {label:'PAY PERIOD 08 — WEEK 4 (Jul 5–11)',cls:'pp2',days:['S5','M6','T7','W8','T9','F10','S11']},
+];
+const staff=[
+  {name:"Mark D'Agostino",meta:'FT',
+    cells:['S','','S','TRAN','S','sw','S','','','','R','','','','','','J','','J','','J sw','J/T','','','','J','','','J','','J','','J','','J','','J','','','','','','S sw','S sw','','','S/T V','S V','S V','','','','','',''],
+    cover:['','','','Greg P.','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','']},
+  {name:'Greg Page',meta:'FT',
+    cells:['','','S','','J','','J/S','','','','J','','','','','','J/S sw','','','','','','J/T','','J/S','','','','J/S','','','','','','','','J/S','','R','','','','','','','','J/S','','','','S/T','','','','J/S','','',''],
+    cover:[]},
+  {name:'Keith Burnett',meta:'FT',
+    cells:['J/S','','','','','','','','J/S','ESC','R','','','','','','','','J/S sw','','','','S/T','','','','J/S','','','','S','','J','','J/S','','','','','','J','','','','','','J/S','','','','','','J/T','','J/S','','',''],
+    cover:['','','','','','','','','','Tracy A.*','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','']},
+  {name:'J-N Michaud',meta:'FT',
+    cells:['J','','','','J','','J','','J','','J','','','','','','S','','S','','','','S/T','','S','','S','','S','','S','','','','S','','S','','R','','','','','','J','','J','','','','J/T','','J','','J',''],
+    cover:[]},
+  {name:'Angelo Kontakos',meta:'FT',
+    cells:['','','J','','S','','S','','','','R','','S sw','S','','','','','J','','J sw','S/T','','S','','','','','','J sw','','S','','S sw','','','','J','','J sw','J','','J','','','','J','','J/T','','J','','',''],
+    cover:[]},
+  {name:'Steven Yearwood',meta:'PT',
+    cells:['S','','S','','J','','','','S sw','S','','','','','','','J','','','','J','','J/T','','J','','J','','J','','','','J','','J','','J','','R','','','','','','S','','S','','S','','S/T','','','','S',''],
+    cover:[]},
+  {name:'Keon Pompey (J)',meta:'PT',
+    cells:['','','J','','','','','','','','S','','S','','S','','','','','','S','','','','','','','','','','J','','','','','','','','','','J','','J','','','','J V','J V','','','','','',''],
+    cover:[]},
+  {name:'Keon Pompey (S)',meta:'PT',
+    cells:['','','','','S','','','','S','','','','J','','J','','','','','','','','','','J','','','','','','','','S','','','','','','','','S','','S','','S','','','','','','S','','',''],
+    cover:[]},
+  {name:'Jean-Odlin Pierre',meta:'PT',
+    cells:['','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','',''],
+    cover:[]},
+  {name:'Errol Anthony Green',meta:'PT',
+    cells:['','','','','N','','','','','','N','','N','','N','','N','','','','','','N','','N','','','','','','','N','','','','','','','','N','','N','','N','','N','','','','','','N','','',''],
+    cover:[]},
+];
+const memoData={
+  'TRAN-0-3':{title:"Transportation — Mark D'Agostino",detail:{'Number of youth':'2','Destination':'Local clinic appointment','Start time':'12:00','End time':'15:00','Covering staff':'Greg Page (regular shift swapped to cover)'}},
+  'ESC-2-9':{title:'Northern escort — Keith Burnett',detail:{'Number of youth':'3','Destination':'Montreal','Start time':'05:30','End time':'22:00 (next day)','Covering staff':'Tracy Adam* (agency)','Notes':'Court appearance escort. Overnight stay, hotel booked.'}},
+};
+function cellClass(v){
+  if(!v) return 'empty';
+  if(v==='OT') return 'OT';
+  if(v==='TRAN') return 'TRAN';
+  if(v==='ESC') return 'ESC';
+  if(v.includes('S')) return 'S1';
+  if(v.includes('N')) return 'N';
+  if(v.includes('V')) return 'V';
+  return 'J1';
+}
+function buildSchedule(containerId, currentUserName, isManagement){
+  let html='';
+  WEEKS.forEach((wk,wIdx)=>{
+    html+='<div class="week-block-label '+wk.cls+'">'+wk.label+'</div>';
+    html+='<table class="sched"><thead><tr><th class="nh">Staff</th>';
+    wk.days.forEach(d=>html+='<th>'+d+'</th>');
+    html+='</tr></thead><tbody>';
+    staff.forEach(s=>{
+      const isMine=s.name===currentUserName;
+      const offset=wIdx*7;
+      html+='<tr class="'+(isMine?'row-mine':'')+'"><td class="nh"><span class="nm" title="'+s.name+'">'+s.name+'</span><span class="mt">'+s.meta+'</span></td>';
+      for(let i=0;i<7;i++){
+        const idx=offset+i;
+        const code=s.cells[idx]||'';
+        const cover=s.cover&&s.cover[idx]?s.cover[idx]:'';
+        const cc=cellClass(code);
+        let onclickAttr='', clickableClass='';
+        if(code==='TRAN'||code==='ESC'){
+          const key=code+'-'+staff.indexOf(s)+'-'+idx;
+          const canOpen=isManagement||isMine;
+          clickableClass='clickable';
+          onclickAttr=canOpen?"onclick='openMemo(\""+key+"\")'":"onclick='openDenied()'";
+        }
+        html+='<td class="std"><div class="cell '+cc+' '+clickableClass+'" '+onclickAttr+' title="'+s.name+'"><span>'+(code||'—')+'</span>'+(cover?'<span class="cover-name">'+cover+'</span>':'')+'</div></td>';
+      }
+      html+='</tr>';
+    });
+    html+='</tbody></table>';
+  });
+  document.getElementById(containerId).innerHTML=html;
+}
+function openMemo(key){
+  let m=memoData[key];
+  if(!m) m=key.startsWith('TRAN')?memoData['TRAN-0-3']:memoData['ESC-2-9'];
+  document.getElementById('memo-modal-title').textContent=m.title;
+  document.getElementById('memo-modal-body').innerHTML=Object.entries(m.detail).map(([k,v])=>'<div class="los-field"><div class="los-label">'+k+'</div><div class="los-val">'+v+'</div></div>').join('');
+  document.getElementById('memo-modal').classList.add('open');
+}
+function openDenied(){document.getElementById('denied-modal').classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+function showS(id,btn){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+  document.querySelectorAll('.tabbtn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+}
+
+buildSchedule('emp-grid-scroll','Steven Yearwood',false);
+buildSchedule('mgmt-grid-scroll','',true);
+</script>
+</body>
+</html>

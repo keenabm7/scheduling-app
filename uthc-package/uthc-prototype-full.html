@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>UTHC Ulluriaq — Scheduling App Prototype</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg0:#f0ede7;--bg1:#f7f6f2;--bg2:#fff;--bd:#ddd9d0;--bd2:#c8c4bb;
+  --t1:#2b2a27;--t2:#6b6962;--t3:#9a978d;
+  --blue:#185FA5;--bluedark:#0C447C;--bluelight:#E6F1FB;--bluemid:#B5D4F4;
+  --green:#27500A;--greenlight:#EAF3DE;--greenmid:#97C459;
+  --amber:#633806;--amberlight:#FAEEDA;
+  --red:#791F1F;--redlight:#FCEBEB;
+  --teal:#085041;--teallight:#E1F5EE;
+  --pink:#72243E;--pinklight:#FBEAF0;
+  --purple:#5B2196;--purplelight:#F3E8FF;
+  --r:8px;--rl:14px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--t1);background:var(--bg0);font-size:13px;min-height:100vh}
+
+/* NAV */
+.topnav{display:flex;align-items:center;gap:0;background:var(--bg2);border-bottom:1px solid var(--bd);padding:0;overflow-x:auto;position:sticky;top:0;z-index:100}
+.nav-logo{padding:12px 18px;font-size:13px;font-weight:600;color:var(--blue);white-space:nowrap;border-right:1px solid var(--bd)}
+.nav-item{padding:12px 14px;font-size:12px;font-weight:500;color:var(--t2);cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap}
+.nav-item:hover{color:var(--t1);background:var(--bg1)}
+.nav-item.on{color:var(--blue);border-bottom-color:var(--blue)}
+.nav-badge{font-size:9px;background:#E24B4A;color:#fff;border-radius:8px;padding:1px 5px;margin-left:3px;font-weight:600}
+.nav-right{margin-left:auto;padding:8px 14px;display:flex;align-items:center;gap:8px;border-left:1px solid var(--bd)}
+.role-label{font-size:11px;color:var(--t3)}
+.role-switch{padding:5px 12px;border-radius:var(--r);border:1px solid var(--bd2);font-size:11px;cursor:pointer;font-weight:500;background:var(--bg2);color:var(--t2)}
+.role-switch:hover{background:var(--bg1)}
+
+/* MAIN */
+.main{max-width:1100px;margin:0 auto;padding:1.25rem}
+.page{display:none}.page.on{display:block}
+
+/* CARDS */
+.card{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--rl);padding:1rem 1.1rem;margin-bottom:.9rem}
+.card-title{font-size:13px;font-weight:600;margin-bottom:.7rem;display:flex;justify-content:space-between;align-items:center}
+.grid2{display:grid;grid-template-columns:1.4fr 1fr;gap:.9rem;margin-bottom:.9rem}
+@media(max-width:600px){.grid2{grid-template-columns:1fr}}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:.9rem}
+@media(max-width:500px){.grid4{grid-template-columns:repeat(2,1fr)}}
+.stat{background:var(--bg1);border-radius:var(--r);padding:.8rem;text-align:center}
+.stat-n{font-size:22px;font-weight:600;margin-bottom:2px}
+.stat-l{font-size:10px;color:var(--t2)}
+
+/* TABLES */
+table.bt{width:100%;border-collapse:collapse;font-size:12px}
+table.bt th{text-align:left;padding:6px 8px;font-size:11px;font-weight:600;color:var(--t2);background:var(--bg1);border-bottom:1px solid var(--bd)}
+table.bt td{padding:7px 8px;border-bottom:1px solid var(--bd);vertical-align:middle}
+table.bt tr:last-child td{border-bottom:none}
+
+/* BUTTONS */
+.btn{padding:7px 16px;border-radius:var(--r);border:1px solid var(--bd2);background:var(--bg2);font-size:12px;font-weight:500;cursor:pointer;color:var(--t1)}
+.btn:hover{background:var(--bg1)}
+.btn.pri{background:var(--blue);color:#fff;border-color:var(--blue)}
+.btn.pri:hover{background:var(--bluedark)}
+.btn.grn{background:var(--greenlight);color:var(--green);border-color:var(--greenmid)}
+.btn.amb{background:var(--amberlight);color:var(--amber);border-color:#EF9F27}
+.btn.red{background:var(--redlight);color:var(--red);border-color:#F09595}
+.btn.sm{padding:4px 10px;font-size:11px}
+
+/* BADGES */
+.badge{font-size:10px;padding:2px 8px;border-radius:4px;font-weight:600}
+.b-act{background:var(--greenlight);color:var(--green)}
+.b-sus{background:var(--amberlight);color:var(--amber)}
+.b-ter{background:var(--redlight);color:var(--red)}
+.b-mat{background:var(--pinklight);color:var(--pink)}
+.b-cnesst{background:var(--amberlight);color:var(--amber)}
+.b-sick{background:var(--redlight);color:var(--red)}
+.b-vac{background:var(--greenlight);color:var(--green)}
+.b-ft{background:var(--bluelight);color:var(--blue)}
+
+/* INFO / WARN */
+.info{background:var(--bluelight);color:var(--bluedark);border:1px solid var(--bluemid);border-radius:var(--r);padding:9px 12px;font-size:12px;margin-bottom:.8rem;line-height:1.5}
+.lock-pill{font-size:10px;background:var(--bluelight);color:var(--bluedark);border-radius:8px;padding:2px 8px;font-weight:600}
+
+/* FIELD */
+.field{margin-bottom:.9rem}
+.field label{display:block;font-size:11px;font-weight:600;color:var(--t2);margin-bottom:5px}
+.field input,.field select,.field textarea{width:100%;padding:8px 10px;border-radius:var(--r);border:1px solid var(--bd2);font-size:12px;background:var(--bg2);color:var(--t1)}
+
+/* LOGIN */
+.login-wrap{min-height:calc(100vh - 50px);display:flex;align-items:center;justify-content:center;padding:2rem}
+.login-card{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--rl);padding:2rem;width:360px;max-width:100%}
+.login-logo{display:flex;align-items:center;gap:12px;margin-bottom:1.75rem}
+.login-mark{width:42px;height:42px;border-radius:var(--r);background:var(--bluelight);display:flex;align-items:center;justify-content:center;font-size:22px}
+.login-title{font-size:16px;font-weight:600}
+.login-sub{font-size:11px;color:var(--t3)}
+.role-seg{display:flex;background:var(--bg1);border-radius:var(--r);padding:3px;margin-bottom:1.5rem}
+.role-opt{flex:1;text-align:center;padding:8px 0;font-size:12px;font-weight:500;border-radius:6px;cursor:pointer;color:var(--t2)}
+.role-opt.on{background:var(--bg2);color:var(--blue);box-shadow:0 0 0 1px var(--bd)}
+.otp-note{background:var(--bluelight);border-radius:var(--r);padding:10px 12px;font-size:11px;color:var(--bluedark);margin-top:1rem;line-height:1.5}
+.login-link{font-size:11px;color:var(--t3);text-align:center;margin-top:.85rem}
+.login-link a{color:var(--blue);cursor:pointer}
+
+/* SCHED GRID */
+.sched-tabs{display:flex;gap:2px;border-bottom:1px solid var(--bd);margin-bottom:1rem;overflow-x:auto}
+.st{padding:8px 13px;font-size:12px;font-weight:500;color:var(--t2);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;display:flex;align-items:center;gap:5px}
+.st.on{color:var(--blue);border-bottom-color:var(--blue)}
+.pin{font-size:11px;color:var(--t3);cursor:pointer}
+.pin.hp{color:var(--blue)}
+.home-banner{background:var(--bluelight);color:var(--bluedark);border-radius:var(--r);padding:8px 11px;font-size:12px;margin-bottom:.8rem;display:flex;align-items:center;gap:7px}
+.sched-panel{display:none}.sched-panel.on{display:block}
+.sched-scroll{overflow-x:auto}
+.wk-label{font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.04em;padding:7px 4px 4px;background:var(--bg2);position:sticky;top:0;z-index:4}
+.wk-label.pp2{color:var(--pink)}
+table.sg{border-collapse:collapse;font-size:10px;min-width:100%;margin-bottom:.4rem}
+table.sg th,table.sg td{border:1px solid var(--bd)}
+table.sg th{background:var(--bg1);font-weight:600;font-size:9px;color:var(--t2);text-align:center;padding:3px 1px}
+th.nh{text-align:left;padding:3px 7px;width:110px;min-width:110px;max-width:110px;background:var(--bg1)}
+td.nh{text-align:left;padding:3px 7px;width:110px;min-width:110px;max-width:110px;font-weight:600;background:var(--bg2);font-size:10px;overflow:hidden}
+td.nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+td.mt{font-size:8px;color:var(--t3);font-weight:400;display:block}
+td.std{width:36px;padding:1px;text-align:center}
+.cell{display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:2px;font-size:9px;font-weight:600;min-height:16px;padding:1px;line-height:1}
+.J1{background:#DBEAFE;color:#1e40af}
+.S1{background:#FEF3C7;color:#92400e}
+.N{background:#EEEDFE;color:#3C3489}
+.OT{background:#ADD8E6;color:#0C447C}
+.TRAN{background:var(--blue);color:#fff;cursor:pointer}
+.ESC{background:var(--teal);color:#fff;cursor:pointer}
+.V{background:var(--greenlight);color:var(--green)}
+.em{background:var(--bg1);color:var(--t3);font-weight:400}
+.mine td.nh{background:#FFFCE8}
+.cover{font-size:7px;font-style:italic;opacity:.9}
+.legend{display:flex;flex-wrap:wrap;gap:6px;padding:.5rem 0;font-size:10px}
+.lgi{display:flex;align-items:center;gap:4px}
+.lgd{width:18px;height:12px;border-radius:2px;font-size:8px;display:flex;align-items:center;justify-content:center;font-weight:600}
+
+/* MESSAGING */
+.msg-app{display:flex;border:1px solid var(--bd);border-radius:var(--rl);overflow:hidden;height:420px;background:var(--bg2)}
+.msg-sb{width:210px;min-width:210px;border-right:1px solid var(--bd);display:flex;flex-direction:column;overflow-y:auto}
+.msg-sb-head{padding:.7rem .9rem;border-bottom:1px solid var(--bd);font-size:12px;font-weight:600}
+.conv{display:flex;gap:8px;padding:9px .9rem;cursor:pointer;border-bottom:1px solid var(--bd)}
+.conv:hover{background:var(--bg1)}
+.conv.on{background:var(--bluelight)}
+.av{width:30px;height:30px;border-radius:50%;background:var(--greenlight);color:var(--green);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.cv-name{font-size:11px;font-weight:600}
+.cv-prev{font-size:10px;color:var(--t2)}
+.msg-main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.msg-head{padding:.7rem .9rem;border-bottom:1px solid var(--bd);font-weight:600;font-size:13px}
+.msg-body{flex:1;overflow-y:auto;padding:.9rem;display:flex;flex-direction:column;gap:8px}
+.bub{max-width:75%;padding:8px 11px;border-radius:10px;font-size:12px;line-height:1.4}
+.bub.them{background:var(--bg1);align-self:flex-start}
+.bub.me{background:var(--blue);color:#fff;align-self:flex-end}
+.sw-card{align-self:center;width:92%;background:var(--bg2);border:1px solid #85B7EB;border-radius:var(--rl);padding:.85rem;font-size:12px}
+.sw-title{font-weight:600;margin-bottom:.5rem;color:var(--bluedark);display:flex;align-items:center;gap:6px}
+.sw-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--bd);font-size:12px}
+.sw-row:last-of-type{border-bottom:none}
+.sw-status{display:flex;gap:5px;flex-wrap:wrap;margin-top:.6rem}
+.pill{font-size:10px;padding:3px 9px;border-radius:9px;font-weight:600}
+.pill.done{background:var(--greenlight);color:var(--green)}
+.pill.wait{background:var(--amberlight);color:var(--amber)}
+.pill.pend{background:var(--bg1);color:var(--t3)}
+.msg-input{display:flex;gap:6px;padding:.7rem;border-top:1px solid var(--bd)}
+.msg-input input{flex:1;padding:7px 10px;border-radius:var(--r);border:1px solid var(--bd2);font-size:12px}
+.sw-trigger{padding:5px 11px;border-radius:var(--r);border:1px dashed var(--bd2);font-size:11px;cursor:pointer;color:var(--t2);background:var(--bg1);white-space:nowrap}
+.sw-trigger:hover{background:var(--bluelight);color:var(--blue)}
+
+/* SENIORITY */
+.sen-list{list-style:none}
+.sen-row{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r);margin-bottom:5px;cursor:grab}
+.sen-row.dragging{opacity:.35}
+.sen-rank{width:26px;height:26px;border-radius:50%;background:var(--bluelight);color:var(--bluedark);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sen-name{font-weight:500;flex:1;font-size:12px}
+.sen-meta{font-size:11px;color:var(--t2)}
+.arr{width:22px;height:22px;border-radius:5px;border:1px solid var(--bd);background:var(--bg2);cursor:pointer;font-size:13px}
+.arr:hover{background:var(--bg1)}
+.arr:disabled{opacity:.3;cursor:default}
+
+/* MODAL */
+.modal-wrap{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);align-items:center;justify-content:center;z-index:200}
+.modal-wrap.open{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--rl);padding:1.25rem;width:400px;max-width:94%;max-height:90vh;overflow-y:auto}
+.modal-title{font-size:14px;font-weight:600;margin-bottom:.85rem;display:flex;justify-content:space-between;align-items:center}
+.mx{cursor:pointer;color:var(--t3);font-size:20px;line-height:1}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:.65rem}
+.deny-screen{text-align:center;padding:2.5rem 1rem}
+.deny-icon{font-size:36px;margin-bottom:.65rem;color:var(--red)}
+
+/* DEPT BAR */
+.dep-row{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--bd);font-size:12px}
+.dep-row:last-child{border-bottom:none}
+.bar-bg{flex:1;height:5px;background:var(--bg1);border-radius:3px;margin:0 8px}
+.bar-fill{height:100%;border-radius:3px;background:var(--blue)}
+
+/* LTABS */
+.ltabs{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}
+.ltab{padding:5px 12px;border-radius:var(--r);border:1px solid var(--bd);font-size:11px;cursor:pointer;background:var(--bg2);color:var(--t2)}
+.ltab.on{background:var(--bluelight);color:var(--bluedark);border-color:#85B7EB;font-weight:600}
+
+/* MEMO */
+.memo-card{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--rl);padding:.95rem;margin-bottom:.75rem}
+.memo-type{display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:3px 9px;border-radius:9px;font-weight:600;margin-bottom:.5rem}
+.mt-escort{background:var(--teallight);color:var(--teal)}
+.mt-transport{background:var(--bluelight);color:var(--bluedark)}
+.memo-title{font-size:13px;font-weight:600;margin-bottom:.5rem}
+.memo-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:.5rem}
+.memo-field{background:var(--bg1);border-radius:var(--r);padding:7px 9px}
+.memo-label{font-size:9px;color:var(--t2);margin-bottom:2px}
+.memo-val{font-weight:600;font-size:12px}
+
+/* QUICK GRID */
+.quick{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+@media(max-width:500px){.quick{grid-template-columns:repeat(2,1fr)}}
+.qb{background:var(--bg1);border-radius:var(--r);padding:.7rem .5rem;text-align:center;cursor:pointer;border:none;font-size:11px;font-weight:500;color:var(--t2)}
+.qb:hover{background:var(--bluelight);color:var(--blue)}
+.qb-icon{font-size:22px;color:var(--blue);margin-bottom:4px}
+
+/* PROTOTYPE BANNER */
+.proto-banner{background:#FFF7E0;border-bottom:1px solid #E8D48A;padding:8px 18px;font-size:11px;color:#7a6010;display:flex;align-items:center;gap:6px}
+</style>
+</head>
+<body>
+
+<div class="proto-banner">⚠️ This is a visual prototype — no real backend or data. Interactions are simulated. See the attached Feature Spec document for full behavior rules.</div>
+
+<!-- TOP NAV — management only (hidden in employee/login views) -->
+<nav class="topnav" id="mgmt-nav" style="display:none">
+  <div class="nav-logo">🏥 Ulluriaq Scheduling</div>
+  <div class="nav-item" onclick="page('overview',this)">Overview</div>
+  <div class="nav-item" onclick="page('schedules',this)">Schedules</div>
+  <div class="nav-item" onclick="page('ot',this)">Overtime</div>
+  <div class="nav-item" onclick="page('bookoffs',this)">Book-offs <span class="nav-badge">4</span></div>
+  <div class="nav-item" onclick="page('messaging',this)">Messaging</div>
+  <div class="nav-item" onclick="page('memos',this)">Memos</div>
+  <div class="nav-item" onclick="page('leave',this)">Staff on leave 🔒</div>
+  <div class="nav-item" onclick="page('staff',this)">Staff & access</div>
+  <div class="nav-item" onclick="page('seniority',this)">Seniority</div>
+  <div class="nav-right">
+    <span class="role-label">Logged in as: Management</span>
+    <button class="role-switch" onclick="logout()">Sign out</button>
+  </div>
+</nav>
+
+<!-- TOP NAV — employee -->
+<nav class="topnav" id="emp-nav" style="display:none">
+  <div class="nav-logo">🏥 Ulluriaq Scheduling</div>
+  <div class="nav-item" onclick="empPage('emp-schedule',this)">My schedule</div>
+  <div class="nav-item" onclick="empPage('emp-bookoff',this)">Book-off request</div>
+  <div class="nav-item" onclick="empPage('emp-switch',this)">Switch request</div>
+  <div class="nav-item" onclick="empPage('emp-messaging',this)">Messages</div>
+  <div class="nav-item" onclick="empPage('emp-oncall',this)">On-call manager</div>
+  <div class="nav-right">
+    <span class="role-label">Keith Burnett · Boys IA</span>
+    <button class="role-switch" onclick="logout()">Sign out</button>
+  </div>
+</nav>
+
+<div class="main">
+
+<!-- ==================== LOGIN ==================== -->
+<div id="p-login" class="page on">
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="login-logo"><div class="login-mark">📅</div><div><div class="login-title">Ulluriaq Scheduling</div><div class="login-sub">Ungava Tulattavik Health Center</div></div></div>
+      <div class="role-seg">
+        <div class="role-opt on" onclick="setRole('mgmt',this)">Management</div>
+        <div class="role-opt" onclick="setRole('emp',this)">Employee</div>
+      </div>
+      <div class="field"><label>Work email</label><input type="email" placeholder="firstname.lastname.cstu@ssss.gouv.qc.ca"></div>
+      <div class="field"><label>Password</label><input type="password" placeholder="••••••••"></div>
+      <button class="btn pri" style="width:100%;padding:10px 0;margin-top:4px" id="sign-btn" onclick="doLogin()">Sign in</button>
+      <div class="otp-note">🔐 Email + OTP verification is required only on first sign-in, and once every 12 months — not every login.</div>
+      <div class="login-link"><a onclick="alert('Password reset instructions sent to your work email.')">Forgot password?</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== MANAGEMENT: OVERVIEW ==================== -->
+<div id="p-overview" class="page">
+  <div class="grid4">
+    <div class="stat"><div class="stat-n">43</div><div class="stat-l">Active staff</div></div>
+    <div class="stat"><div class="stat-n" style="color:var(--red)">4</div><div class="stat-l">Pending book-offs</div></div>
+    <div class="stat"><div class="stat-n" style="color:var(--blue)">7</div><div class="stat-l">Unfilled shifts</div></div>
+    <div class="stat"><div class="stat-n" style="color:var(--green)">12</div><div class="stat-l">OT this PP</div></div>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">Recent activity</div>
+      <div style="font-size:12px">
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--bd)"><span>Eddy Bathalien's book-off (Jun 14, 19) approved</span><span style="color:var(--t3);font-size:10px">2h ago</span></div>
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--bd)"><span>Switch: Kerwin ↔ Mahkeda — approved</span><span style="color:var(--t3);font-size:10px">4h ago</span></div>
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--bd)"><span>OT offered to Gilles Lezi — Sat Jun 20, pending</span><span style="color:var(--t3);font-size:10px">6h ago</span></div>
+        <div style="display:flex;justify-content:space-between;padding:6px 0"><span>Jalen Matandi's availability sheet — late</span><span style="color:var(--t3);font-size:10px">Yesterday</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Shift coverage — by department</div>
+      <div class="dep-row"><span>Boys Educators</span><div class="bar-bg"><div class="bar-fill" style="width:92%"></div></div><span>92%</span></div>
+      <div class="dep-row"><span>Boys IA</span><div class="bar-bg"><div class="bar-fill" style="width:88%"></div></div><span>88%</span></div>
+      <div class="dep-row"><span>Girls Educators</span><div class="bar-bg"><div class="bar-fill" style="width:79%;background:var(--pink)"></div></div><span>79%</span></div>
+      <div class="dep-row"><span>Girls IA</span><div class="bar-bg"><div class="bar-fill" style="width:84%;background:var(--pink)"></div></div><span>84%</span></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Quick actions</div>
+    <div class="quick">
+      <button class="qb" onclick="page('schedules',null)"><div class="qb-icon">📅</div>Schedules</button>
+      <button class="qb" onclick="page('ot',null)"><div class="qb-icon">⏰</div>Overtime</button>
+      <button class="qb" onclick="page('bookoffs',null)"><div class="qb-icon">📋</div>Book-offs</button>
+      <button class="qb" onclick="page('messaging',null)"><div class="qb-icon">💬</div>Messaging</button>
+      <button class="qb" onclick="page('memos',null)"><div class="qb-icon">📝</div>Memos</button>
+      <button class="qb" onclick="page('leave',null)"><div class="qb-icon">🛌</div>Staff leave</button>
+      <button class="qb" onclick="page('staff',null)"><div class="qb-icon">👥</div>Staff access</button>
+      <button class="qb" onclick="page('seniority',null)"><div class="qb-icon">📊</div>Seniority</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCHEDULES ==================== -->
+<div id="p-schedules" class="page">
+  <div class="info">Click any schedule to open the full editable 4-week grid — all staff, all shift codes, with transport/escort detail.</div>
+  <div class="card">
+    <div class="card-title">All schedules — PP 07 & 08</div>
+    <table class="bt"><thead><tr><th>Unit</th><th>Role</th><th>Coverage</th><th>Shifts</th><th></th></tr></thead><tbody>
+      <tr><td>Boys</td><td>Educators</td><td>92%</td><td>J1/J2/S1/S2/N/OT</td><td><button class="btn sm pri" onclick="showFullGrid('Boys Educators')">Open grid</button></td></tr>
+      <tr><td>Boys</td><td>IA Day/Evening</td><td>88%</td><td>J1/J2/S1/S2/OT/TRAN/ESC</td><td><button class="btn sm pri" onclick="showFullGrid('Boys IA Day/Eve')">Open grid</button></td></tr>
+      <tr><td>Boys</td><td>IA Overnight</td><td>91%</td><td>N/N/T/N/E</td><td><button class="btn sm pri" onclick="showFullGrid('Boys IA Overnight')">Open grid</button></td></tr>
+      <tr><td>Girls</td><td>Educators</td><td>79%</td><td>J1/J2/S1/S2/N/OT</td><td><button class="btn sm pri" onclick="showFullGrid('Girls Educators')">Open grid</button></td></tr>
+      <tr><td>Girls</td><td>IA Day/Evening</td><td>84%</td><td>J1/J2/S1/S2/OT/TRAN/ESC</td><td><button class="btn sm pri" onclick="showFullGrid('Girls IA Day/Eve')">Open grid</button></td></tr>
+      <tr><td>Girls</td><td>IA Overnight</td><td>88%</td><td>N/N/T/N/E</td><td><button class="btn sm pri" onclick="showFullGrid('Girls IA Overnight')">Open grid</button></td></tr>
+    </tbody></table>
+  </div>
+  <div id="full-grid-area"></div>
+</div>
+
+<!-- ==================== OVERTIME ==================== -->
+<div id="p-ot" class="page">
+  <div class="info">Open shift: Boys Educators — Sat Jun 20, S1 (15:00–22:45). Offer order: FT by seniority → PT by rotation → Recall → Agency. T = Taken (email to employee + manager; name appears on schedule). R = Refused (logged with timestamp; auto-advances to next).</div>
+  <div class="card">
+    <div class="card-title">Step 1 — Full-time educators, by seniority</div>
+    <table class="bt"><thead><tr><th>#</th><th>Name</th><th>Status</th><th>Seniority</th><th>Last OT</th><th>Action</th></tr></thead><tbody>
+      <tr><td>1</td><td><b>Gilles Lezi</b></td><td><span class="badge b-ft">FT</span></td><td>15.56 yrs</td><td>Jun 7</td><td><button class="btn sm grn" onclick="otAction('Gilles Lezi','T')">T — Taken</button> <button class="btn sm red" onclick="otAction('Gilles Lezi','R')">R — Refused</button></td></tr>
+      <tr><td>2</td><td><b>Eddy Bathalien</b></td><td><span class="badge b-ft">FT</span></td><td>15.34 yrs</td><td>Jun 5</td><td><button class="btn sm grn" onclick="otAction('Eddy Bathalien','T')">T — Taken</button> <button class="btn sm red" onclick="otAction('Eddy Bathalien','R')">R — Refused</button></td></tr>
+      <tr><td>3</td><td><b>Makeda Samuels</b></td><td><span class="badge b-ft">FT</span></td><td>15.26 yrs</td><td>Jun 10</td><td><button class="btn sm grn" onclick="otAction('Makeda Samuels','T')">T — Taken</button> <button class="btn sm red" onclick="otAction('Makeda Samuels','R')">R — Refused</button></td></tr>
+      <tr><td>4</td><td><b>Michael Flemming</b></td><td><span class="badge b-ft">FT</span></td><td>14.95 yrs</td><td>Jun 3</td><td><button class="btn sm grn" onclick="otAction('Michael Flemming','T')">T — Taken</button> <button class="btn sm red" onclick="otAction('Michael Flemming','R')">R — Refused</button></td></tr>
+    </tbody></table>
+  </div>
+  <div id="ot-result"></div>
+</div>
+
+<!-- ==================== BOOK-OFFS ==================== -->
+<div id="p-bookoffs" class="page">
+  <div class="info">Requests under 24 hrs are auto-denied before reaching this queue. 3+ consecutive days = vacation approval required. 3 consecutive weekend book-offs triggers an automatic management alert.</div>
+  <div class="card">
+    <div class="card-title">Pending book-off requests</div>
+    <table class="bt" id="bo-mgmt-table"></table>
+  </div>
+</div>
+
+<!-- ==================== MESSAGING ==================== -->
+<div id="p-messaging" class="page">
+  <p style="font-size:12px;color:var(--t2);margin-bottom:.8rem">Direct messaging between employees. Use "Propose switch" inside a conversation to start the formal 3-step switch approval chain.</p>
+  <div id="msg-area"></div>
+  <div class="card" style="margin-top:.8rem">
+    <div class="card-title">Switch approval queue (management)</div>
+    <div class="info">Only requests where BOTH employees have already agreed appear here. Three-way switches are never permitted.</div>
+    <table class="bt"><thead><tr><th>Employees</th><th>Details</th><th>Both agreed</th><th>Action</th></tr></thead><tbody>
+      <tr><td><b>Wesley Thomas ↔ Jema Rattray</b></td><td>Jun 23 (S/T) ↔ Jun 24 (J1) · Girls Educators</td><td style="color:var(--green)">✓ 9:22 AM</td><td><button class="btn sm grn" onclick="notify('Switch approved. Both employees notified by app + email. Schedule updated.')">Approve</button> <button class="btn sm red" onclick="notify('Switch denied. Both employees notified.')">Deny</button></td></tr>
+    </tbody></table>
+  </div>
+</div>
+
+<!-- ==================== MEMOS ==================== -->
+<div id="p-memos" class="page">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.8rem">
+    <div style="font-size:12px;color:var(--t2)">Transportation and northern escort details — linked to TRAN/ESC cells on the schedule grid.</div>
+    <button class="btn pri" onclick="openModal('new-memo-modal')">+ New memo</button>
+  </div>
+  <div id="memo-list"></div>
+</div>
+
+<!-- ==================== STAFF ON LEAVE ==================== -->
+<div id="p-leave" class="page">
+  <div class="info">🔒 Never visible to employees in general. Exception: an employee on leave sees their own progressive return schedule in their personal view only.</div>
+  <div class="card">
+    <div class="card-title">Staff on leave tracker <button class="btn sm pri" onclick="openModal('new-leave-modal')">+ Add record</button></div>
+    <table class="bt"><thead><tr><th>Name</th><th>Type</th><th>Started</th><th>Return</th><th>Progressive return</th><th></th></tr></thead><tbody>
+      <tr><td>Sergio De Luca</td><td><span class="badge b-vac">Vacation</span></td><td>Jun 15</td><td>Jun 20</td><td>No</td><td><button class="btn sm">Edit</button></td></tr>
+      <tr><td>Ashley Zycholtz</td><td><span class="badge b-sick">Sick leave</span></td><td>Jun 10</td><td>Jul 15</td><td>Yes — 2 shifts/wk for 2 wks, then full schedule</td><td><button class="btn sm">Edit</button></td></tr>
+      <tr><td>Darius Branch</td><td><span class="badge b-cnesst">CNESST leave</span></td><td>May 20</td><td>Aug 1</td><td>Yes — 3 shifts/wk for 4 wks, reassessed by physician</td><td><button class="btn sm">Edit</button></td></tr>
+      <tr><td>Stephanie George</td><td><span class="badge b-mat">Maternity leave</span></td><td>Mar 1</td><td>Feb 28, 2027</td><td>No</td><td><button class="btn sm">Edit</button></td></tr>
+    </tbody></table>
+  </div>
+</div>
+
+<!-- ==================== STAFF ACCESS ==================== -->
+<div id="p-staff" class="page">
+  <div class="info">Suspending or terminating immediately revokes app login access. Reinstating restores it instantly. Historical schedule data is retained regardless of status.</div>
+  <div class="card">
+    <div class="card-title">Staff & access control</div>
+    <div style="display:flex;gap:8px;margin-bottom:.8rem"><input type="text" placeholder="Search by name, unit, or role..." style="padding:7px 10px;border-radius:var(--r);border:1px solid var(--bd2);font-size:12px;flex:1"></div>
+    <table class="bt"><thead><tr><th>Name</th><th>Role · Unit</th><th>Status</th><th>App access</th><th>Action</th></tr></thead><tbody>
+      <tr><td><b>Gilles Lezi</b></td><td>Educator FT · Boys</td><td><span class="badge b-act">Active</span></td><td>✓ Can sign in</td><td><button class="btn sm amb">Suspend</button> <button class="btn sm red">Terminate</button></td></tr>
+      <tr><td><b>Eddy Bathalien</b></td><td>Educator FT · Boys</td><td><span class="badge b-act">Active</span></td><td>✓ Can sign in</td><td><button class="btn sm amb">Suspend</button> <button class="btn sm red">Terminate</button></td></tr>
+      <tr style="background:#FFFBF0"><td><b>Wesley Thomas</b><div style="font-size:10px;color:var(--t3)">Pending HR review · since Jun 10</div></td><td>Educator TFT · Girls</td><td><span class="badge b-sus">Suspended</span></td><td>✗ Blocked</td><td><button class="btn sm grn" onclick="notify('Wesley Thomas reinstated. Access restored immediately.')">Reinstate</button> <button class="btn sm red">Terminate</button></td></tr>
+      <tr style="background:#FEF5F5;opacity:.75"><td><b>Jalen Matandi</b><div style="font-size:10px;color:var(--t3)">Resigned · since May 30</div></td><td>IA PT · Girls</td><td><span class="badge b-ter">Terminated</span></td><td>✗ Removed</td><td><button class="btn sm grn" onclick="notify('Jalen Matandi reinstated. Access restored.')">Reinstate</button></td></tr>
+      <tr><td><b>Keith Burnett</b></td><td>IA FT · Boys</td><td><span class="badge b-act">Active</span></td><td>✓ Can sign in</td><td><button class="btn sm amb">Suspend</button> <button class="btn sm red">Terminate</button></td></tr>
+    </tbody></table>
+  </div>
+</div>
+
+<!-- ==================== SENIORITY ==================== -->
+<div id="p-seniority" class="page">
+  <div class="info">Drag rows by the ≡ handle, or use the ↑↓ arrows, to reorder. Saved order directly drives overtime distribution priority.</div>
+  <div style="display:flex;gap:10px;margin-bottom:.8rem">
+    <button class="btn" onclick="senUnit='educators';renderSen()">Educators</button>
+    <button class="btn" onclick="senUnit='ia';renderSen()">Intervention Agents</button>
+  </div>
+  <ul class="sen-list" id="sen-list"></ul>
+  <button class="btn pri" style="margin-top:.5rem" onclick="notify('Seniority order saved. This now drives OT distribution and rotation.')">Save new order</button>
+</div>
+
+<!-- ==================== EMPLOYEE: SCHEDULE ==================== -->
+<div id="p-emp-schedule" class="page">
+  <div class="sched-tabs" id="emp-sched-tabs">
+    <div class="st on" onclick="empSchedTab('boys-ia',this)">Boys IA <span class="pin hp" title="Home screen — pinned">📌</span></div>
+    <div class="st" onclick="empSchedTab('boys-ed',this)">Boys Educators <span class="pin" onclick="event.stopPropagation();setEmpHome(this)">📍</span></div>
+    <div class="st" onclick="empSchedTab('girls-ia',this)">Girls IA <span class="pin" onclick="event.stopPropagation();setEmpHome(this)">📍</span></div>
+    <div class="st" onclick="empSchedTab('girls-ed',this)">Girls Educators <span class="pin" onclick="event.stopPropagation();setEmpHome(this)">📍</span></div>
+  </div>
+  <div id="sp-boys-ia" class="sched-panel on" style="overflow-x:auto"></div>
+  <div id="sp-boys-ed" class="sched-panel"><div class="home-banner">📍 Boys Educators — click 📍 above to make this your home screen.</div><p style="font-size:12px;color:var(--t2)">Full Boys Educators 4-week grid loads here.</p></div>
+  <div id="sp-girls-ia" class="sched-panel"><div class="home-banner">📍 Girls IA — click 📍 above to make this your home screen.</div><p style="font-size:12px;color:var(--t2)">Full Girls IA 4-week grid loads here.</p></div>
+  <div id="sp-girls-ed" class="sched-panel"><div class="home-banner">📍 Girls Educators — click 📍 above to make this your home screen.</div><p style="font-size:12px;color:var(--t2)">Full Girls Educators 4-week grid loads here.</p></div>
+</div>
+
+<!-- ==================== EMPLOYEE: BOOK-OFF ==================== -->
+<div id="p-emp-bookoff" class="page">
+  <div class="info">Leave type is required before you can submit. Requests under 24 hrs are automatically denied — contact management directly instead.</div>
+  <div class="card" style="max-width:460px">
+    <div class="card-title">Request a book-off</div>
+    <div class="field"><label>Date(s) requesting off</label><input type="date" id="bo-date" onchange="check24(this.value)"></div>
+    <div id="u24-warn" style="display:none;background:var(--redlight);color:var(--red);border-radius:var(--r);padding:9px 12px;font-size:12px;margin-bottom:.8rem">🚫 Less than 24 hours away — this request cannot be submitted. Contact management directly.</div>
+    <div class="field"><label>Leave type <span style="color:var(--red)">* required</span></label>
+      <div class="ltabs">
+        <div class="ltab" onclick="selLeave(this,'Vacation')">Vacation</div>
+        <div class="ltab" onclick="selLeave(this,'Sick')">Sick</div>
+        <div class="ltab" onclick="selLeave(this,'Stat')">Stat</div>
+        <div class="ltab" onclick="selLeave(this,'Psychosocial')">Psychosocial</div>
+        <div class="ltab" onclick="selLeave(this,'LIB')">LIB</div>
+        <div class="ltab" onclick="selLeave(this,'Mat leave')">Mat leave</div>
+      </div>
+    </div>
+    <div id="leave-err" style="display:none;color:var(--red);font-size:11px;margin-bottom:.5rem">⚠️ Select a leave type to continue.</div>
+    <div class="field"><label>Notes (optional)</label><input type="text" placeholder="Any additional details..."></div>
+    <button class="btn pri" style="width:100%" onclick="submitBO()">Submit request</button>
+  </div>
+</div>
+
+<!-- ==================== EMPLOYEE: SWITCH ==================== -->
+<div id="p-emp-switch" class="page">
+  <div class="info">Educator ↔ Educator or IA ↔ IA only. Three-way switches never permitted. Your coworker must agree before management sees this request.</div>
+  <div id="emp-msg-area"></div>
+</div>
+
+<!-- ==================== EMPLOYEE: MESSAGING ==================== -->
+<div id="p-emp-messaging" class="page">
+  <div id="emp-msg-full"></div>
+</div>
+
+<!-- ==================== EMPLOYEE: ON-CALL ==================== -->
+<div id="p-emp-oncall" class="page">
+  <div class="card" style="max-width:360px">
+    <div class="card-title">On-call manager — this weekend</div>
+    <div style="font-size:16px;font-weight:600;margin-bottom:4px" id="oncall-name">Unit Manager</div>
+    <div style="font-size:12px;color:var(--t2)">514-974-XXXX · manager@ssss.gouv.qc.ca</div>
+    <div style="font-size:11px;color:var(--t3);margin-top:6px">Fri Jun 20 17:00 → Mon Jun 23 9:00</div>
+  </div>
+</div>
+
+</div><!-- .main -->
+
+<!-- MODALS -->
+<div id="new-memo-modal" class="modal-wrap">
+  <div class="modal">
+    <div class="modal-title">New memo <span class="mx" onclick="closeModal('new-memo-modal')">×</span></div>
+    <div class="field"><label>Memo type</label><select id="m-type"><option value="escort">Northern escort</option><option value="transport">Transportation shift</option></select></div>
+    <div class="row2">
+      <div class="field"><label>Staff assigned</label><input id="m-staff" type="text" placeholder="e.g. Mark D'Agostino"></div>
+      <div class="field"><label>Date</label><input id="m-date" type="date"></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Number of youth</label><input id="m-youth" type="number" min="1" placeholder="e.g. 2"></div>
+      <div class="field"><label>Destination / community</label><input id="m-dest" placeholder="e.g. Kuujjuaq"></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Start time</label><input id="m-start" type="time"></div>
+      <div class="field"><label>End time</label><input id="m-end" type="time"></div>
+    </div>
+    <div class="field"><label>Notes</label><textarea id="m-notes" rows="2" placeholder="Any additional details..."></textarea></div>
+    <button class="btn pri" style="width:100%" onclick="saveMemo()">Save memo</button>
+  </div>
+</div>
+
+<div id="new-leave-modal" class="modal-wrap">
+  <div class="modal">
+    <div class="modal-title">Add leave record <span class="mx" onclick="closeModal('new-leave-modal')">×</span></div>
+    <div class="row2">
+      <div class="field"><label>Employee</label><input type="text" placeholder="Name"></div>
+      <div class="field"><label>Leave type</label><select><option>Sick leave</option><option>Maternity leave</option><option>Paternity leave</option><option>CNESST leave</option><option>Vacation</option><option>Other</option></select></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Date started</label><input type="date"></div>
+      <div class="field"><label>Expected return</label><input type="date"></div>
+    </div>
+    <div class="field"><label>Progressive return?</label><select id="prog-sel" onchange="document.getElementById('prog-detail').style.display=this.value==='yes'?'block':'none'"><option value="no">No</option><option value="yes">Yes</option></select></div>
+    <div class="field" id="prog-detail" style="display:none"><label>Progressive return schedule</label><input type="text" placeholder="e.g. 2 shifts/week for 2 weeks, then full schedule"></div>
+    <button class="btn pri" style="width:100%" onclick="closeModal('new-leave-modal');notify('Leave record saved. Visible to management only.')">Save record</button>
+  </div>
+</div>
+
+<div id="tran-modal" class="modal-wrap">
+  <div class="modal">
+    <div class="modal-title"><span id="tran-title">Transport/escort detail</span><span class="mx" onclick="closeModal('tran-modal')">×</span></div>
+    <div id="tran-body" class="memo-grid"></div>
+    <button class="btn" style="width:100%;margin-top:.8rem" onclick="closeModal('tran-modal')">Close</button>
+  </div>
+</div>
+
+<div id="denied-modal" class="modal-wrap">
+  <div class="modal">
+    <div class="deny-screen"><div class="deny-icon">🔒</div><div style="font-weight:600;margin-bottom:4px">Access restricted</div><div style="font-size:12px;color:var(--t2)">This transport/escort detail is only visible to the assigned employee and management.</div></div>
+    <button class="btn" style="width:100%;margin-top:.5rem" onclick="closeModal('denied-modal')">Close</button>
+  </div>
+</div>
+
+<div id="notif-wrap" style="position:fixed;top:56px;right:14px;z-index:300;width:270px"></div>
+
+<script>
+/* ===================== STATE ===================== */
+let loginRole='mgmt', selLeaveVal='', dragIdx=null, senUnit='educators';
+const WEEKS=[
+  {label:'PP 07 — WEEK 1 (Jun 14–20)',cls:'',days:['S14','M15','T16','W17','T18','F19','S20']},
+  {label:'PP 07 — WEEK 2 (Jun 21–27)',cls:'',days:['S21','M22','T23','W24','T25','F26','S27']},
+  {label:'PP 08 — WEEK 3 (Jun 28–Jul 4)',cls:'pp2',days:['S28','M29','T30','W1','T2','F3','S4']},
+  {label:'PP 08 — WEEK 4 (Jul 5–11)',cls:'pp2',days:['S5','M6','T7','W8','T9','F10','S11']},
+];
+const boData=[
+  {emp:'Kerwin Guy-Roach',dates:'Jul 8',type:'Family',status:'pending'},
+  {emp:'Tharani Siwalingam',dates:'Jun 23, Jun 26',type:'Vacation',status:'pending'},
+  {emp:'Shannon Ridley',dates:'Jun 17, Jul 3, Jul 9',type:'Vacation',status:'pending'},
+  {emp:'Eddy Bathalien',dates:'Jun 14, Jun 19',type:'Stat',status:'approved'},
+  {emp:'Paul Vincent',dates:'Jul 4, Jul 5',type:'Vacation',status:'pending'},
+];
+const memoData=[
+  {type:'escort',staff:"Mark D'Agostino",date:'Jun 16, 2026',youth:2,dest:'Kuujjuaq',start:'06:00',end:'18:00',notes:'Medical appointment escort. Return flight booked for same day.'},
+  {type:'transport',staff:'Greg Page',date:'Jun 17, 2026',youth:1,dest:'Local — clinic',start:'12:00',end:'15:00',notes:'Agency staff (Ahmad*) to arrive 1hr before appointment.'},
+  {type:'escort',staff:'Keith Burnett',date:'Jun 25, 2026',youth:3,dest:'Montreal',start:'05:30',end:'22:00',notes:'Court appearance escort. Overnight stay required, hotel booked.'},
+];
+const senData={
+  educators:[
+    {name:'Gilles Lezi',status:'FT',years:'15.56 yrs'},
+    {name:'Eddy Bathalien',status:'FT',years:'15.34 yrs'},
+    {name:'Makeda Samuels',status:'FT',years:'15.26 yrs'},
+    {name:'Michael Flemming',status:'FT',years:'14.95 yrs'},
+    {name:'Kerwin Guy-Roach',status:'TFT',years:'11.46 yrs'},
+    {name:'Ansonia Arrington',status:'TFT',years:'10.19 yrs'},
+    {name:'Yvonne Kaberamanzi',status:'PT',years:'9.37 yrs'},
+    {name:'Shannon Ridley',status:'PT',years:'8.12 yrs'},
+  ],
+  ia:[
+    {name:'Jean Nicolas Michaud',status:'FT',years:'15.52 yrs'},
+    {name:'Keith Burnett',status:'FT',years:'15.20 yrs'},
+    {name:"Mark D'Agostino",status:'FT',years:'14.88 yrs'},
+    {name:'Angelo Kontakos',status:'FT',years:'13.45 yrs'},
+    {name:'Greg Page',status:'FT',years:'12.30 yrs'},
+    {name:'Steven Yearwood',status:'PT',years:'9.10 yrs'},
+    {name:'Keon Pompey',status:'PT',years:'7.88 yrs'},
+    {name:'Braydon Burnett',status:'TFT',years:'5.22 yrs'},
+  ]
+};
+const schedStaff=[
+  {name:'Keith Burnett',meta:'FT',mine:true,
+   cells:['J/S','','','','J/S','','','','J/S','ESC','R','','','','','','','','J/S sw','','','','S/T','','','','J/S','',''],
+   cover:['','','','','','','','','','Tracy A.*','','','','','','','','','','','','','','','','','','']},
+  {name:"Mark D'Agostino",meta:'FT',mine:false,
+   cells:['S','','S','TRAN','S','sw','S','','','','R','','','','','','J','','J','','J sw','J/T','','','','J','',''],
+   cover:['','','','Greg P.','','','','','','','','','','','','','','','','','','','','','','','','']},
+  {name:'Greg Page',meta:'FT',mine:false,cells:['','OT','S','','J','','J/S','','','','J','','','','','','J/S sw','','','','','','J/T','','J/S','','',''],cover:[]},
+  {name:'J-N Michaud',meta:'FT',mine:false,cells:['J','','','','J','','J','','J','','J','','','','','','S','','S','','','','S/T','','S','','S',''],cover:[]},
+  {name:'Angelo Kontakos',meta:'FT',mine:false,cells:['','','J','','S','','S','','','','R','','S sw','S','','','','','J','','J sw','S/T','','S','','','',''],cover:[]},
+  {name:'Steven Yearwood',meta:'PT',mine:false,cells:['S','','S','','J','','','','S sw','S','','','','','','','J','','','','J','','J/T','','J','','J',''],cover:[]},
+  {name:'Keon Pompey (J)',meta:'PT',mine:false,cells:['','','J','','','','','','','','S','','S','','S','','','','','','S','','','','','','',''],cover:[]},
+  {name:'Errol A. Green',meta:'PT',mine:false,cells:['','','','','N','','','','','','N','','N','','N','','N','','','','','','N','','N','','',''],cover:[]},
+];
+
+/* ===================== NAV ===================== */
+function setRole(r,el){
+  loginRole=r;
+  document.querySelectorAll('.role-opt').forEach(x=>x.classList.remove('on'));
+  el.classList.add('on');
+}
+function doLogin(){
+  document.getElementById('p-login').classList.remove('on');
+  if(loginRole==='mgmt'){
+    document.getElementById('mgmt-nav').style.display='flex';
+    document.getElementById('emp-nav').style.display='none';
+    page('overview',document.querySelector('#mgmt-nav .nav-item'));
+  } else {
+    document.getElementById('emp-nav').style.display='flex';
+    document.getElementById('mgmt-nav').style.display='none';
+    buildEmpSchedule();
+    buildEmpMsg();
+    empPage('emp-schedule',document.querySelector('#emp-nav .nav-item'));
+  }
+}
+function logout(){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.getElementById('p-login').classList.add('on');
+  document.getElementById('mgmt-nav').style.display='none';
+  document.getElementById('emp-nav').style.display='none';
+}
+function page(id,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.getElementById('p-'+id).classList.add('on');
+  document.querySelectorAll('#mgmt-nav .nav-item').forEach(n=>n.classList.remove('on'));
+  if(el) el.classList.add('on');
+  if(id==='bookoffs') renderBOTable();
+  if(id==='memos') renderMemos();
+  if(id==='seniority') renderSen();
+  if(id==='messaging') buildMsgArea();
+}
+function empPage(id,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.getElementById('p-'+id).classList.add('on');
+  document.querySelectorAll('#emp-nav .nav-item').forEach(n=>n.classList.remove('on'));
+  if(el) el.classList.add('on');
+}
+
+/* ===================== SCHEDULE GRID ===================== */
+function cellClass(v){
+  if(!v) return 'em';
+  if(v==='OT') return 'OT';if(v==='TRAN') return 'TRAN';if(v==='ESC') return 'ESC';
+  if(v.includes('N')) return 'N';if(v.includes('V')) return 'V';
+  if(v[0]==='S') return 'S1';return 'J1';
+}
+function buildGrid(containerId, isMgmt){
+  let h='';
+  WEEKS.forEach((wk,wi)=>{
+    h+='<div class="wk-label '+wk.cls+'">'+wk.label+'</div>';
+    h+='<table class="sg"><thead><tr><th class="nh">Staff</th>';
+    wk.days.forEach(d=>h+='<th>'+d+'</th>');
+    h+='</tr></thead><tbody>';
+    schedStaff.forEach((s,si)=>{
+      h+='<tr class="'+(s.mine?'mine':'')+'"><td class="nh"><span class="td nm">'+s.name+'</span><span class="mt">'+s.meta+'</span></td>';
+      for(let i=0;i<7;i++){
+        const idx=wi*7+i;
+        const code=s.cells[idx]||'';
+        const cover=s.cover&&s.cover[idx]?s.cover[idx]:'';
+        const cc=cellClass(code);
+        let onclick='';
+        if(code==='TRAN'||code==='ESC'){
+          if(isMgmt||s.mine) onclick="onclick='openTranDetail(\""+code+"\",\""+s.name+"\")'";
+          else onclick="onclick='openModal(\"denied-modal\")'";
+        }
+        h+='<td class="std"><div class="cell '+cc+'" '+onclick+'><span>'+(code||'—')+'</span>'+(cover?'<span class="cover">'+cover+'</span>':'')+'</div></td>';
+      }
+      h+='</tr>';
+    });
+    h+='</tbody></table>';
+  });
+  h+='<div class="legend"><div class="lgi"><div class="lgd J1">J</div>Day</div><div class="lgi"><div class="lgd S1">S</div>Evening</div><div class="lgi"><div class="lgd N">N</div>Night</div><div class="lgi"><div class="lgd OT">OT</div>Overtime</div><div class="lgi"><div class="lgd TRAN">TRAN</div>Transport</div><div class="lgi"><div class="lgd ESC">ESC</div>Escort</div></div>';
+  document.getElementById(containerId).innerHTML=h;
+}
+function showFullGrid(name){
+  const el=document.getElementById('full-grid-area');
+  el.innerHTML='<div class="card"><div class="card-title">'+name+' — full 4-week grid (management edit view)</div><div class="sched-scroll" id="mgmt-full-grid"></div></div>';
+  buildGrid('mgmt-full-grid',true);
+  el.scrollIntoView({behavior:'smooth'});
+}
+function buildEmpSchedule(){
+  const el=document.getElementById('sp-boys-ia');
+  el.innerHTML='<div class="home-banner">📌 This is your home screen — Boys IA, your pinned schedule.</div><div class="sched-scroll" id="emp-grid"></div>';
+  buildGrid('emp-grid',false);
+}
+function empSchedTab(id,el){
+  document.querySelectorAll('.sched-panel').forEach(p=>p.classList.remove('on'));
+  document.getElementById('sp-'+id).classList.add('on');
+  document.querySelectorAll('.st').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+}
+function setEmpHome(pin){
+  document.querySelectorAll('.pin').forEach(p=>{p.classList.remove('hp');p.textContent='📍';});
+  pin.classList.add('hp');pin.textContent='📌';
+}
+
+/* ===================== TRAN/ESC DETAIL ===================== */
+const tranDetails={
+  "ESC-Keith Burnett":{title:'Northern escort — Keith Burnett',data:{'Number of youth':'3','Destination':'Montreal','Start time':'05:30','End time':'22:00 (next day)','Covering staff':'Tracy Adam* (agency)','Notes':'Court appearance escort. Overnight stay, hotel booked.'}},
+  "TRAN-Mark D'Agostino":{title:"Transportation — Mark D'Agostino",data:{'Number of youth':'2','Destination':'Local clinic appointment','Start time':'12:00','End time':'15:00','Covering staff':'Greg Page (shift swapped to cover)'}},
+};
+function openTranDetail(code,name){
+  const key=code+'-'+name;
+  const d=tranDetails[key]||{title:code+' detail — '+name,data:{Info:'Contact management for full details.'}};
+  document.getElementById('tran-title').textContent=d.title;
+  document.getElementById('tran-body').innerHTML=Object.entries(d.data).map(([k,v])=>'<div class="memo-field"><div class="memo-label">'+k+'</div><div class="memo-val">'+v+'</div></div>').join('');
+  openModal('tran-modal');
+}
+
+/* ===================== OT ===================== */
+function otAction(name,action){
+  const r=document.getElementById('ot-result');
+  if(action==='T'){
+    r.innerHTML='<div class="info" style="border-left:3px solid var(--green)">✓ <b>'+name+'</b> accepted the shift. Email confirmation sent to '+name+' and management. Their name will appear as the cover on the schedule.</div>';
+  } else {
+    r.innerHTML='<div class="info" style="border-left:3px solid var(--amber)">📋 <b>'+name+'</b> refused. Email sent with timestamp, manager copied. Advancing to next person in rotation.</div>';
+  }
+  r.scrollIntoView({behavior:'smooth'});
+}
+
+/* ===================== BOOK-OFFS ===================== */
+function renderBOTable(){
+  const t=document.getElementById('bo-mgmt-table');
+  t.innerHTML='<thead><tr><th>Employee</th><th>Date(s)</th><th>Type</th><th>Status</th><th>Action</th></tr></thead><tbody>'+
+    boData.map((r,i)=>'<tr><td><b>'+r.emp+'</b></td><td>'+r.dates+'</td><td>'+r.type+'</td><td>'+(r.status==='approved'?'<span class="badge b-act">Approved</span>':'<span class="badge b-sus">Pending</span>')+'</td><td>'+(r.status==='approved'?'—':'<button class="btn sm grn" onclick="approveBO('+i+')">Approve</button> <button class="btn sm red" onclick="denyBO('+i+')">Deny</button>')+'</td></tr>').join('')+'</tbody>';
+}
+function approveBO(i){boData[i].status='approved';renderBOTable();notify(boData[i].emp+' book-off approved. Email sent to employee and manager.');}
+function denyBO(i){const n=boData[i].emp;boData.splice(i,1);renderBOTable();notify(n+'\'s book-off denied. Employee notified by app + email.');}
+
+/* ===================== EMPLOYEE BOOK-OFF ===================== */
+function selLeave(el,v){document.querySelectorAll('.ltab').forEach(t=>t.classList.remove('on'));el.classList.add('on');selLeaveVal=v;document.getElementById('leave-err').style.display='none';}
+function check24(v){if(!v)return;const diff=(new Date(v+'T00:00:00')-new Date())/(3600000);document.getElementById('u24-warn').style.display=diff<24?'block':'none';}
+function submitBO(){
+  if(!selLeaveVal){document.getElementById('leave-err').style.display='block';return;}
+  const d=document.getElementById('bo-date').value;
+  if(!d){alert('Please select a date.');return;}
+  notify('Your '+selLeaveVal+' book-off for '+d+' has been submitted. Management will be notified by app + email.');
+  selLeaveVal='';document.querySelectorAll('.ltab').forEach(t=>t.classList.remove('on'));
+}
+
+/* ===================== MESSAGING ===================== */
+function buildMsgArea(){
+  document.getElementById('msg-area').innerHTML=msgHTML('Wesley Thomas','WT');
+  document.getElementById('emp-msg-area').innerHTML=msgHTML('Jema Rattray','JR');
+  document.getElementById('emp-msg-full').innerHTML=msgHTML('Mahkeda Newton','MN');
+}
+function buildEmpMsg(){buildMsgArea();}
+function msgHTML(name,initials){
+  return '<div class="msg-app"><div class="msg-sb"><div class="msg-sb-head">Messages</div>'+
+    '<div class="conv on"><div class="av">'+initials+'</div><div><div class="cv-name">'+name+'</div><div class="cv-prev">Switch proposal</div></div></div>'+
+    '<div class="conv"><div class="av" style="background:#ADD8E6;color:#0C447C">MP</div><div><div class="cv-name">Matthew Pike</div><div class="cv-prev">Can you cover Sat?</div></div></div>'+
+    '</div><div class="msg-main"><div class="msg-head">'+name+'</div><div class="msg-body">'+
+    '<div class="bub them">Hey — can you switch your evening Jun 23 for my day Jun 24?</div>'+
+    '<div class="bub me">Yeah that works, sending the formal request</div>'+
+    '<div class="sw-card"><div class="sw-title">↔ Switch proposal</div>'+
+    '<div class="sw-row"><span>You give</span><b>Tue Jun 23 — Evening (S/T)</b></div>'+
+    '<div class="sw-row"><span>You receive</span><b>Wed Jun 24 — Day (J1)</b></div>'+
+    '<div class="sw-row"><span>Unit</span><b>Girls Educators (same unit)</b></div>'+
+    '<div class="sw-status"><span class="pill done">✓ You agreed</span><span class="pill wait">⏳ '+name+' — pending</span><span class="pill pend">🛡 Management — pending</span></div>'+
+    '<div style="font-size:9px;color:var(--blue);margin-top:6px">✉ Email + app notification sent to '+name+'</div>'+
+    '<div class="sw-status" style="margin-top:.4rem"><button class="btn sm grn" onclick="notify(\''+name+' agreed! Request now in management approval queue. Email + app notification sent to both parties.\')">Agree to switch</button> <button class="btn sm red" onclick="notify(\'Declined. The requesting employee has been notified. Request closed.\')">Decline</button></div>'+
+    '</div></div>'+
+    '<div class="msg-input"><button class="sw-trigger" onclick="alert(\'Opens structured switch proposal form.\')">↔ Propose switch</button><input type="text" placeholder="Type a message..."><button class="btn pri" onclick="notify(\'Message sent.\')">Send</button></div>'+
+    '</div></div>';
+}
+
+/* ===================== MEMOS ===================== */
+function renderMemos(){
+  document.getElementById('memo-list').innerHTML=memoData.map((m,i)=>`
+    <div class="memo-card">
+      <span class="memo-type ${m.type==='escort'?'mt-escort':'mt-transport'}">${m.type==='escort'?'✈️ Northern escort':'🚌 Transportation shift'}</span>
+      <div class="memo-title">${m.staff} — ${m.date}</div>
+      <div class="memo-grid">
+        <div class="memo-field"><div class="memo-label">Number of youth</div><div class="memo-val">${m.youth}</div></div>
+        <div class="memo-field"><div class="memo-label">Destination / community</div><div class="memo-val">${m.dest}</div></div>
+        <div class="memo-field"><div class="memo-label">Start time</div><div class="memo-val">${m.start}</div></div>
+        <div class="memo-field"><div class="memo-label">End time</div><div class="memo-val">${m.end}</div></div>
+      </div>
+      <div style="font-size:12px;color:var(--t2)">${m.notes}</div>
+    </div>`).join('');
+}
+function saveMemo(){
+  const m={type:document.getElementById('m-type').value,staff:document.getElementById('m-staff').value||'—',date:document.getElementById('m-date').value||'—',youth:document.getElementById('m-youth').value||0,dest:document.getElementById('m-dest').value||'—',start:document.getElementById('m-start').value||'—',end:document.getElementById('m-end').value||'—',notes:document.getElementById('m-notes').value};
+  memoData.unshift(m);closeModal('new-memo-modal');renderMemos();notify('Memo saved for '+m.staff+'.');
+}
+
+/* ===================== SENIORITY ===================== */
+function renderSen(){
+  const list=senData[senUnit];
+  document.getElementById('sen-list').innerHTML=list.map((s,i)=>`<li class="sen-row" draggable="true" ondragstart="dragStart(${i})" ondragover="event.preventDefault()" ondrop="dragDrop(event,${i})" ondragend="dragEnd()">
+    <span style="color:var(--t3);font-size:16px;cursor:grab">≡</span>
+    <span class="sen-rank">${i+1}</span>
+    <span class="sen-name">${s.name}</span>
+    <span class="sen-meta">${s.status} · ${s.years}</span>
+    <button class="arr" onclick="moveSen(${i},-1)" ${i===0?'disabled':''}>↑</button>
+    <button class="arr" onclick="moveSen(${i},1)" ${i===list.length-1?'disabled':''}>↓</button>
+  </li>`).join('');
+}
+function moveSen(i,d){const l=senData[senUnit];const j=i+d;if(j<0||j>=l.length)return;[l[i],l[j]]=[l[j],l[i]];renderSen();}
+function dragStart(i){dragIdx=i;setTimeout(()=>document.querySelectorAll('.sen-row')[i].classList.add('dragging'),0);}
+function dragDrop(e,i){e.preventDefault();if(dragIdx===null||dragIdx===i)return;const l=senData[senUnit];const it=l.splice(dragIdx,1)[0];l.splice(i,0,it);dragIdx=null;renderSen();}
+function dragEnd(){document.querySelectorAll('.sen-row').forEach(r=>r.classList.remove('dragging'));}
+
+/* ===================== MODALS ===================== */
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+/* ===================== NOTIFICATIONS ===================== */
+function notify(msg){
+  const el=document.createElement('div');
+  el.style.cssText='background:var(--bg2);border:1px solid var(--greenmid);border-left:3px solid var(--green);border-radius:var(--r);padding:10px 12px;font-size:12px;margin-bottom:6px;box-shadow:0 2px 8px rgba(0,0,0,.1);line-height:1.4';
+  el.innerHTML='<b style="color:var(--green)">✓ Done</b><br>'+msg;
+  document.getElementById('notif-wrap').prepend(el);
+  setTimeout(()=>el.remove(),5000);
+}
+</script>
+</body>
+</html>

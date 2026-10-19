@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>UTHC Scheduling — 04. Coworker Messaging & Switch Approval Chain</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg-2:#fff; --bg-3:#ebe9e3; --border:#ddd9d0;
+  --text-1:#2b2a27; --text-2:#6b6962; --text-3:#9a978d;
+  --blue:#185FA5; --blue-dark:#0C447C; --blue-light:#E6F1FB;
+  --green:#27500A; --green-light:#EAF3DE; --green-mid:#97C459;
+  --amber:#633806; --amber-light:#FAEEDA;
+  --red:#791F1F; --red-light:#FCEBEB;
+  --radius-md:8px; --radius-lg:14px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:var(--text-1);background:var(--bg-3);font-size:13px}
+.note{background:#FFF7E0;border:1px solid #E8D48A;border-radius:var(--radius-md);padding:10px 14px;font-size:12px;color:#6b5610;margin:14px auto;max-width:1000px}
+.stage{min-height:90vh;display:flex;flex-direction:column;align-items:center;padding:1.5rem}
+.tabs{display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap;justify-content:center}
+.tabbtn{padding:5px 14px;border-radius:var(--radius-md);border:1px solid var(--border);font-size:12px;cursor:pointer;font-weight:500;background:var(--bg-2);color:var(--text-2)}
+.tabbtn.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+.screen{display:none;width:100%;justify-content:center}
+.screen.active{display:flex}
+.app2{width:100%;max-width:800px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;display:flex;height:540px}
+.msg-sidebar{width:220px;min-width:220px;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.msg-side-head{padding:.7rem .85rem;border-bottom:1px solid var(--border);font-size:12px;font-weight:600}
+.conv-item{display:flex;gap:8px;padding:9px .85rem;cursor:pointer;border-bottom:1px solid var(--border)}
+.conv-item:hover{background:var(--bg-3)}
+.conv-item.active{background:var(--blue-light)}
+.conv-av{width:28px;height:28px;border-radius:50%;background:var(--green-light);color:var(--green);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.conv-name{font-size:11px;font-weight:600}
+.conv-preview{font-size:10px;color:var(--text-2)}
+.msg-main{flex:1;display:flex;flex-direction:column}
+.msg-head{padding:.7rem .9rem;border-bottom:1px solid var(--border);font-weight:600;font-size:13px}
+.msg-body{flex:1;overflow-y:auto;padding:.9rem;display:flex;flex-direction:column;gap:8px}
+.bubble{max-width:75%;padding:8px 11px;border-radius:10px;font-size:12px;line-height:1.4}
+.bubble.them{background:var(--bg-3);align-self:flex-start}
+.bubble.me{background:var(--blue);color:#fff;align-self:flex-end}
+.switch-card{align-self:center;width:92%;background:var(--bg-2);border:1px solid #85B7EB;border-radius:var(--radius-lg);padding:.85rem;font-size:12px}
+.switch-card-title{font-weight:700;margin-bottom:.5rem;color:var(--blue-dark)}
+.switch-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)}
+.switch-row:last-of-type{border-bottom:none}
+.switch-status{display:flex;gap:6px;margin-top:.6rem;flex-wrap:wrap}
+.stage-pill{font-size:10px;padding:3px 9px;border-radius:9px;font-weight:600}
+.stage-pill.done{background:var(--green-light);color:var(--green)}
+.stage-pill.wait{background:var(--amber-light);color:var(--amber)}
+.stage-pill.pending{background:var(--bg-3);color:var(--text-3)}
+.switch-actions{margin-top:.6rem;display:flex;gap:6px}
+.mbtn{padding:5px 11px;border-radius:var(--radius-md);border:1px solid #ccc;background:var(--bg-2);font-size:11px;cursor:pointer}
+.mbtn.grn{background:var(--green-light);color:var(--green);border-color:var(--green-mid)}
+.mbtn.red{background:var(--red-light);color:var(--red);border-color:#F09595}
+.mbtn.pri{background:var(--blue);color:#fff;border-color:var(--blue)}
+.dash{width:100%;max-width:760px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+.dtop{padding:.8rem 1.1rem;border-bottom:1px solid var(--border);font-weight:600;font-size:14px}
+.dbody{padding:1.1rem}
+.dc{background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:.9rem;margin-bottom:.7rem}
+.dct{font-size:13px;font-weight:600;margin-bottom:.6rem}
+.info-box{background:var(--blue-light);color:var(--blue-dark);border:1px solid #B5D4F4;border-radius:var(--radius-md);padding:8px 11px;font-size:12px;margin-bottom:.7rem}
+table{width:100%;font-size:12px;border-collapse:collapse}
+td{padding:5px 0;color:var(--text-2)}
+.email-tag{font-size:9px;color:var(--blue);margin-top:5px}
+</style>
+</head>
+<body>
+
+<div class="note">PROTOTYPE FILE — visual mockup only. See FEATURE_SPEC.md §7.2 (Shift Switches) and §10 (Coworker Messaging) for full behavior rules. Note the 3-step chain: both employees must agree before management ever sees the request.</div>
+
+<div class="stage">
+<div class="tabs">
+  <button class="tabbtn on" onclick="showS('a',this)">1. Employee A proposes switch</button>
+  <button class="tabbtn" onclick="showS('b',this)">2. Employee B agrees</button>
+  <button class="tabbtn" onclick="showS('mgmt',this)">3. Management approval queue</button>
+  <button class="tabbtn" onclick="showS('final',this)">4. Final confirmation</button>
+</div>
+
+<div id="screen-a" class="screen active">
+  <div class="app2">
+    <div class="msg-sidebar">
+      <div class="msg-side-head">Messages</div>
+      <div class="conv-item active"><div class="conv-av">JR</div><div><div class="conv-name">Jema Rattray</div><div class="conv-preview">Switch proposal sent</div></div></div>
+      <div class="conv-item"><div class="conv-av">MN</div><div><div class="conv-name">Mahkeda Newton</div><div class="conv-preview">Sounds good, thanks!</div></div></div>
+    </div>
+    <div class="msg-main">
+      <div class="msg-head">Jema Rattray — Girls Educator, Recall</div>
+      <div class="msg-body">
+        <div class="bubble them">Hey! Are you able to switch your evening shift on Jun 23 for my day shift on Jun 24?</div>
+        <div class="bubble me">Yeah that works, sending the formal request</div>
+        <div class="switch-card">
+          <div class="switch-card-title">↔ Switch proposal</div>
+          <div class="switch-row"><span>You give</span><strong>Tue Jun 23 — Evening (S/T)</strong></div>
+          <div class="switch-row"><span>You receive</span><strong>Wed Jun 24 — Day (J1)</strong></div>
+          <div class="switch-row"><span>Unit</span><strong>Girls Educators (same unit)</strong></div>
+          <div class="switch-status">
+            <span class="stage-pill done">✓ You agreed</span>
+            <span class="stage-pill wait">⏳ Jema — pending</span>
+            <span class="stage-pill pending">🛡 Management — pending</span>
+          </div>
+          <div class="email-tag">✉ Email + app notification sent to Jema Rattray</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="screen-b" class="screen">
+  <div class="app2">
+    <div class="msg-sidebar">
+      <div class="msg-side-head">Messages</div>
+      <div class="conv-item active"><div class="conv-av">WT</div><div><div class="conv-name">Wesley Thomas</div><div class="conv-preview">Switch proposal — needs your reply</div></div></div>
+    </div>
+    <div class="msg-main">
+      <div class="msg-head">Wesley Thomas — Girls Educator, TFT</div>
+      <div class="msg-body">
+        <div class="bubble them">Hey! Are you able to switch your evening shift on Jun 23 for my day shift on Jun 24?</div>
+        <div class="switch-card">
+          <div class="switch-card-title">↔ Switch proposal from Wesley Thomas</div>
+          <div class="switch-row"><span>Wesley gives</span><strong>Tue Jun 23 — Evening (S/T)</strong></div>
+          <div class="switch-row"><span>You give</span><strong>Wed Jun 24 — Day (J1)</strong></div>
+          <div class="switch-status">
+            <span class="stage-pill done">✓ Wesley agreed</span>
+            <span class="stage-pill wait">⏳ Your response needed</span>
+            <span class="stage-pill pending">🛡 Management — pending</span>
+          </div>
+          <div class="switch-actions">
+            <button class="mbtn grn" onclick="alert('You agreed. Notification sent to Wesley and management via app + email. Now waiting on management approval.')">Agree to switch</button>
+            <button class="mbtn red" onclick="alert('Declined. Wesley has been notified by app + email. This never reaches management.')">Decline</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="screen-mgmt" class="screen">
+  <div class="dash">
+    <div class="dtop">Switch requests — awaiting management approval</div>
+    <div class="dbody">
+      <div class="info-box">ℹ️ Only requests where BOTH employees have already agreed appear in this queue. Three-way switches are never permitted — always 1-to-1.</div>
+      <div class="dc">
+        <div class="dct">Wesley Thomas ↔ Jema Rattray</div>
+        <table><tbody>
+          <tr><td>Wesley gives</td><td>Tue Jun 23 — Evening (S/T)</td></tr>
+          <tr><td>Jema gives</td><td>Wed Jun 24 — Day (J1)</td></tr>
+          <tr><td>Unit</td><td>Girls Educators (same unit)</td></tr>
+          <tr><td>Both parties agreed</td><td style="color:var(--green)">✓ Yes — 9:22 AM</td></tr>
+        </tbody></table>
+        <div style="margin-top:.6rem"><button class="mbtn grn" onclick="alert('Approved. Both employees notified by app + email. Schedule updated automatically.')">Approve switch</button> <button class="mbtn red" onclick="alert('Denied. Both employees notified by app + email.')">Deny switch</button></div>
+      </div>
+      <div class="dc" style="opacity:.6">
+        <div class="dct">Sergio De Luca ↔ Aaron Clark-Ashe — Unit switch (Girls → Boys)</div>
+        <table><tbody>
+          <tr><td>Both parties agreed</td><td style="color:var(--amber)">Waiting on Aaron — not yet visible to mgmt for approval</td></tr>
+        </tbody></table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="screen-final" class="screen">
+  <div class="app2">
+    <div class="msg-sidebar">
+      <div class="msg-side-head">Messages</div>
+      <div class="conv-item active"><div class="conv-av">JR</div><div><div class="conv-name">Jema Rattray</div><div class="conv-preview">Switch approved ✓</div></div></div>
+    </div>
+    <div class="msg-main">
+      <div class="msg-head">Jema Rattray</div>
+      <div class="msg-body">
+        <div class="switch-card" style="border-color:var(--green-mid)">
+          <div class="switch-card-title" style="color:var(--green)">✓ Switch approved by management</div>
+          <div class="switch-row"><span>Wesley now works</span><strong>Wed Jun 24 — Day (J1)</strong></div>
+          <div class="switch-row"><span>Jema now works</span><strong>Tue Jun 23 — Evening (S/T)</strong></div>
+          <div class="switch-status">
+            <span class="stage-pill done">✓ Wesley agreed</span>
+            <span class="stage-pill done">✓ Jema agreed</span>
+            <span class="stage-pill done">✓ Management approved</span>
+          </div>
+          <div class="email-tag">✉ Confirmation sent to both employees by app + email. Schedule updated automatically.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+<script>
+function showS(id,btn){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+  document.querySelectorAll('.tabbtn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+}
+</script>
+</body>
+</html>

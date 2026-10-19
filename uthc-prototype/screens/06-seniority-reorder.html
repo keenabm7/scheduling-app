@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>UTHC Scheduling — 06. Seniority List (Reorderable)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg-2:#fff; --bg-3:#ebe9e3; --border:#ddd9d0;
+  --text-1:#2b2a27; --text-2:#6b6962; --text-3:#9a978d;
+  --blue:#185FA5; --blue-dark:#0C447C; --blue-light:#E6F1FB;
+  --radius-md:8px; --radius-lg:14px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:var(--text-1);background:var(--bg-3);font-size:13px}
+.note{background:#FFF7E0;border:1px solid #E8D48A;border-radius:var(--radius-md);padding:10px 14px;font-size:12px;color:#6b5610;margin:14px auto;max-width:1000px}
+.stage{min-height:90vh;display:flex;flex-direction:column;align-items:center;padding:1.5rem}
+.dash{width:100%;max-width:560px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+.dtop{padding:.8rem 1.1rem;border-bottom:1px solid var(--border)}
+.dtitle{font-size:15px;font-weight:600}
+.dsub{font-size:11px;color:var(--text-3)}
+.dbody{padding:1.1rem}
+.info-box{background:var(--blue-light);color:var(--blue-dark);border:1px solid #B5D4F4;border-radius:var(--radius-md);padding:8px 11px;font-size:12px;margin-bottom:.8rem}
+.sen-list{list-style:none}
+.sen-row{display:flex;align-items:center;gap:8px;padding:8px 9px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-md);margin-bottom:5px;cursor:grab}
+.sen-row.dragging{opacity:.4}
+.sen-rank{width:24px;height:24px;border-radius:50%;background:var(--blue-light);color:var(--blue-dark);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sen-handle{color:var(--text-3);font-size:15px;cursor:grab}
+.sen-name{font-weight:600;flex:1;font-size:12px}
+.sen-meta{font-size:11px;color:var(--text-2)}
+.arrow-btn{width:22px;height:22px;border-radius:5px;border:1px solid #ccc;background:var(--bg-2);cursor:pointer;font-size:12px}
+.arrow-btn:hover{background:var(--bg-3)}
+.arrow-btn:disabled{opacity:.3;cursor:default}
+.mbtn{padding:7px 14px;border-radius:var(--radius-md);border:1px solid var(--blue);background:var(--blue);color:#fff;font-size:12px;cursor:pointer;font-weight:600;width:100%;margin-top:.6rem}
+</style>
+</head>
+<body>
+
+<div class="note">PROTOTYPE FILE — visual mockup only. See FEATURE_SPEC.md §13 (Seniority Lists). Order saved here directly drives Overtime distribution priority (§6).</div>
+
+<div class="stage">
+<div class="dash">
+  <div class="dtop"><div class="dtitle">Educators seniority list</div><div class="dsub">PP 18 · Drag to reorder, or use arrows</div></div>
+  <div class="dbody">
+    <div class="info-box">ℹ️ Drag any row by the ⠿ handle, or use the ↑↓ buttons, to move staff up or down. Order updates immediately and is used for OT distribution and shift rotation.</div>
+    <ul class="sen-list" id="sen-list"></ul>
+    <button class="mbtn" onclick="alert('New seniority order saved. This now drives OT distribution and rotation order for Educators.')">Save new order</button>
+  </div>
+</div>
+</div>
+
+<script>
+let seniority=[
+  {name:'Gilles Lezi',status:'FT',years:'15.56 yrs'},
+  {name:'Eddy Bathalien',status:'FT',years:'15.34 yrs'},
+  {name:'Makeda Samuels',status:'FT',years:'15.26 yrs'},
+  {name:'Michael Flemming',status:'FT',years:'14.95 yrs'},
+  {name:'Kerwin Guy-Roach',status:'TFT',years:'11.46 yrs'},
+  {name:'Ansonia Arrington',status:'TFT',years:'10.19 yrs'},
+  {name:'Yvonne Kaberamanzi',status:'PT',years:'9.37 yrs'},
+  {name:'Amanda Boffice',status:'PT',years:'8.80 yrs'},
+];
+let dragIdx=null;
+function render(){
+  document.getElementById('sen-list').innerHTML=seniority.map((s,i)=>`
+    <li class="sen-row" draggable="true" data-idx="${i}"
+        ondragstart="onDragStart(event,${i})" ondragover="event.preventDefault()" ondrop="onDrop(event,${i})" ondragend="onDragEnd(event)">
+      <span class="sen-handle">⠿</span>
+      <span class="sen-rank">${i+1}</span>
+      <span class="sen-name">${s.name}</span>
+      <span class="sen-meta">${s.status} · ${s.years}</span>
+      <button class="arrow-btn" onclick="move(${i},-1)" ${i===0?'disabled':''}>↑</button>
+      <button class="arrow-btn" onclick="move(${i},1)" ${i===seniority.length-1?'disabled':''}>↓</button>
+    </li>`).join('');
+}
+function move(i,dir){
+  const j=i+dir;
+  if(j<0||j>=seniority.length) return;
+  [seniority[i],seniority[j]]=[seniority[j],seniority[i]];
+  render();
+}
+function onDragStart(e,i){dragIdx=i;e.target.classList.add('dragging');}
+function onDrop(e,i){
+  e.preventDefault();
+  if(dragIdx===null||dragIdx===i) return;
+  const item=seniority.splice(dragIdx,1)[0];
+  seniority.splice(i,0,item);
+  dragIdx=null;
+  render();
+}
+function onDragEnd(){document.querySelectorAll('.sen-row').forEach(r=>r.classList.remove('dragging'));}
+render();
+</script>
+</body>
+</html>

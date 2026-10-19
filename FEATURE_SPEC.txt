@@ -1,0 +1,369 @@
+﻿# Ulluriaq Scheduling App — Feature Specification
+
+**Organization:** Ulluriaq Adolescent Center (UTHC) — Ungava Tulattavik Health Center
+**Purpose:** Complete developer handoff specification for building the UTHC workforce scheduling application.
+**Live prototype:** https://claude.ai/artifact/NaCK1Mj3exjsN87CGXeDd8
+
+---
+
+## 1. Overview
+
+A web-based Progressive Web App (PWA) that replaces manual/paper scheduling for Ulluriaq's two units — **Boys** and **Girls** — each staffed by **Educators** and **Intervention Agents (IAs)** across day, evening, and overnight shifts, tracked in two-week **Pay Periods**.
+
+Two user roles:
+- **Management & Scheduler** — full edit access to all schedules, staff records, approvals, and restricted information.
+- **Employee** — read-only access to schedules, personal requests, and messaging.
+
+There is no "Admin" label anywhere in the product. Use "Scheduling Admin" or "Unit Manager" instead.
+
+---
+
+## 2. Authentication & Access
+
+| Requirement | Detail |
+|---|---|
+| Separate login flows | Management/Scheduler and Employee see distinct login screens. |
+| Credentials | Email/employee number + password. |
+| OTP verification | Required only on first sign-in, and automatically once every 12 months. NOT required on every login. |
+| Session persistence | Sessions persist between the 12-month OTP checkpoints. |
+| Management landing page | Management Dashboard (Overview tab). |
+| Employee landing page | Their own pinned schedule. |
+| Suspend / Terminate / Reinstate | Management can set any employee to Active, Suspended, or Terminated. Suspended/Terminated = immediate login block. Reinstate = immediate access restoration. Historical data retained regardless of status. Each change supports an optional note and effective date. |
+
+---
+
+## 3. Schedules (Core Feature)
+
+### 3.1 The Six Schedules
+1. Boys — Educators
+2. Boys — Intervention Agents (Day/Evening)
+3. Boys — Intervention Agents (Overnight)
+4. Girls — Educators
+5. Girls — Intervention Agents (Day/Evening)
+6. Girls — Intervention Agents (Overnight)
+
+### 3.2 Layout & Time Range
+- Full **4-week view**: current Pay Period (Weeks 1–2) + next Pay Period (Weeks 3–4), stacked vertically on one scrollable screen.
+- All employees on the relevant roster appear as rows; dates as columns.
+- Staff name column: compact (~96–110px) to maximize horizontal grid space.
+- Sticky headers: date row and name column remain visible while scrolling.
+- Schedules are only visible to employees once officially published by management (confidentiality rule — staff cannot see templates before they are finalized).
+
+### 3.3 Shift Codes
+J1, J2, J/T, S1, S2, S/T, N, N/T, N/E, T, R, V, DNR, SW, OT, CNR, TRAN, ESC — each color-coded per Section 18.
+
+### 3.4 Cell Editing (Management only)
+Clicking any shift cell opens an edit panel with:
+- Set/change shift code
+- Add sw (switch) or v (vacation) tag
+- Mark as overtime (highlights staff name in baby blue)
+- Assign a cover/fill-in name — appears below the shift code on the grid for all viewers. Options: all UTHC staff + agency staff (agency names marked with *)
+- Clear the cell
+
+### 3.5 Transportation & Escort (TRAN / ESC)
+- Shown on the shared schedule grid.
+- Clicking opens a linked memo with: number of youth, destination/community, start time, end time, notes.
+- **Visibility:** assigned employee + management only. All other employees see the code but get an "access restricted" message on click.
+- A summary section at the bottom of each schedule (or as a linked section) lists all TRAN/ESC entries: staff name, date, times, community.
+
+### 3.6 Loan of Service (LOS)
+- **Not shown on the shared schedule grid.**
+- Tracked as duration of stay: originating unit, receiving unit, departure date, return date, auto-calculated duration.
+- Visible only to: (a) the employee on loan (personal view) and (b) Management (dedicated tab).
+
+### 3.7 Last-Minute Cover (under 2 hours)
+When a book-off is submitted with under 2 hours to shift start:
+- The system first shows employees **currently scheduled and working** as the first offer option (labeled "Currently scheduled — working").
+- Then lists staff available as per their availability sheet and rotation order.
+- Management is notified immediately.
+
+---
+
+## 4. Management Dashboard
+
+Single tabbed landing page after management login:
+
+| Tab | Contents |
+|---|---|
+| **Overview** | Active staff count, pending book-offs, unfilled shifts, OT assigned this PP, recent activity feed, coverage % by unit/role, quick-action shortcuts. |
+| **Schedules** | All 6 schedules, switchable and fully editable. |
+| **Overtime** | OT distribution queue (see §6). |
+| **Book-offs** | Pending/approved requests with approve/deny. |
+| **Messaging** | Staff message threads + switch approval queue. |
+| **Memos** | Transport and escort memo management (see §8). |
+| **Staff on leave** | Management-only — sick, mat, CNESST, etc. (see §9). |
+| **Staff & Access** | Full staff directory, search/filter, suspend/terminate/reinstate controls, arrival/departure time adjustments, inter-management notes on employees. |
+| **Seniority** | Reorderable seniority lists (see §13). |
+
+---
+
+## 5. Employee Experience
+
+- Lands on their pinned home schedule after login.
+- Can switch between all 4 schedule tabs; one is set as the default home via a pin control.
+- Schedules are **read-only**. Clicking a cell shows shift info and prompts toward a request flow.
+- Employees can view: their own schedule, their own book-offs, total regular shifts, total overtime shifts, their own availability submission time, the on-call manager for the current week.
+- Employees can **never** see: Management Dashboard, other staff's leave details, LOS entries for others, TRAN/ESC details for shifts they are not assigned to, or schedule templates before official publication.
+
+---
+
+## 6. Overtime (OT) Distribution
+
+Priority order, strictly enforced:
+1. Full-time employees — by seniority (most senior offered first). No junior FT staff may accumulate more OT than a senior FT staff member.
+2. Part-time employees — by rotation/seniority.
+3. Recall workers.
+4. Agency (if all above decline or are unavailable).
+
+Each offer:
+- **T (Taken):** Email confirmation to employee + management. Cover name appears on the schedule. Cell marked T.
+- **R (Refused):** Email with date/time to employee + management. Logged. System auto-advances to next person in rotation. Cell marked R.
+
+Management must always see who was last offered/given a shift to verify fair rotation. The app must indicate on the schedule view who is available for a given day as per their availability sheet (management view only), in rotation order, so management can verify before offering.
+
+All regular time and overtime shift totals must be visible to both employee and management.
+
+---
+
+## 7. Requests & Approvals
+
+### 7.1 Book-off / Vacation Requests (Employee-submitted)
+- Employee selects date(s) and a **mandatory** leave-type tag before they can submit: Sick, Vacation, Stat, Psychosocial, LIB, Maternity leave. Submission is blocked until one is selected.
+- **Under 24 hours:** auto-denied with in-app message: "This request is less than 24 hours — please contact management directly." Management notified of the attempt.
+- **Under 2 hours:** see §3.7 (last-minute cover logic).
+- **3+ consecutive days:** auto-flagged as vacation, requires management approval.
+- **3 consecutive weekend (Fri/Sat/Sun) book-offs:** automatic management alert.
+- Management approves/denies from the Book-offs tab. Both outcomes notify the employee via app + email.
+- Employee view includes a history of all their own book-offs and statuses.
+
+### 7.2 Shift Switches — 3-Step Chain
+1. **Proposal:** Employee A messages Employee B and/or sends a formal switch proposal specifying: shift they give up, shift they would receive, date, unit.
+2. **Counterparty agreement:** Employee B agrees or declines in the app. If declined, process ends. Never reaches management.
+3. **Management approval:** Once both agree, the request appears in management's approval queue for final approval or denial.
+
+Rules:
+- Three-way switches are **never** permitted.
+- Educator ↔ Educator only. IA ↔ IA only.
+- Cross-unit (SWB/SWG) is permitted with unit indicated.
+- Every stage sends in-app notification AND email to all relevant parties.
+- Approved switches update the schedule automatically.
+
+---
+
+## 8. Memos — Transport & Northern Escort
+
+Management creates memos linked to TRAN/ESC cells:
+
+| Field | Notes |
+|---|---|
+| Memo type | Transportation shift or Northern escort |
+| Staff assigned | |
+| Date | |
+| Number of youth | |
+| Destination / community | |
+| Start time | |
+| End time | |
+| Notes | e.g., agency arrival requirements, overnight stay, hotel |
+
+Visibility follows §3.5 (assigned employee + management only).
+
+---
+
+## 9. Staff on Leave (Management-only)
+
+Visible only within the Management Dashboard's "Staff on leave" tab:
+
+| Field | Notes |
+|---|---|
+| Employee name | |
+| Leave type | Sick, Maternity, Paternity, CNESST, Vacation, Other |
+| Date started | |
+| Expected return date | |
+| Progressive return? | Yes / No |
+| Progressive return detail | Free text if Yes |
+
+**Exception:** the employee on leave sees their own progressive return schedule in their personal view. No other employee sees anyone else's leave information.
+
+---
+
+## 10. Messaging
+
+- Direct messaging between any two employees.
+- Primary use: coordinating shift switches before formalizing.
+- "Propose switch" action inside a conversation launches the structured switch-proposal form (§7.2) and posts a live status card in the thread showing: Employee A agreed → Employee B agreed/pending → Management approved/pending.
+- Unread message indicators on the conversation list.
+
+---
+
+## 11. Mass Communications
+
+- Management/Scheduler can broadcast to: All staff, a specific unit, a specific role, or Management only.
+- All sent broadcasts are logged and accessible to management for reference.
+- Management can edit the wording of any automatic system message templates (e.g., the late availability message, the <24hr book-off denial message).
+
+---
+
+## 12. On-Call Manager
+
+- All employees can see the on-call manager for the current week/weekend, with contact info.
+- Automatic notification to all staff if the on-call assignment changes.
+- Management can edit the assignment.
+- **On-call manager's view includes:** all schedules, full seniority list, staff contact directory. Management can edit this area.
+- Routing: Mon–Fri 9:00–17:00 → Scheduling Admin. After 17:00 + weekends → On-call manager.
+
+---
+
+## 13. Seniority Lists
+
+- Separate lists for Educators and Intervention Agents.
+- Each row: rank number, employee name, employment status (FT/PT/TFT/Recall), seniority in years and days.
+- **Reorderable by management:** drag-and-drop or up/down arrow controls.
+- Saved order directly drives OT distribution and rotation.
+
+---
+
+## 14. Staff Directory / Contact List
+
+- Full staff list: name, role, employment status, unit, phone, email.
+- Searchable and filterable by unit, role, employment status.
+- Editable by management.
+- Available to the on-call manager within the on-call package view.
+
+---
+
+## 15. Availability Sheets
+
+- **Recall workers:** must submit every pay period to receive shifts.
+- **Part-time block workers:** only required to submit if requesting shifts beyond their fixed block.
+- **Submission window:** up to 10 days before the new schedule period begins (the Monday start date).
+- **Deadline:** every second-to-last Wednesday of the month at 9:00 AM.
+- **Late submissions:** placed at the bottom of the rotation. System sends automatic notification: *"Due to your availability being late, you have been placed at the bottom of the rotation."* Email also sent to management and scheduler.
+- **Availability changes:** employees may request to add or remove a shift from their availability at any time, but changes only take effect 10 days after the request. Immediate notifications sent to the employee, management, and scheduler.
+- **Non-compliant sheets** (below minimum requirements): system flags and notifies management; management decides whether to deny.
+
+**Minimum requirements:**
+- Recall: at least 4 shifts including 2 weekend shifts (Sat + Sun) and 1 evening weekend shift.
+- PT block: already required to work 4 shifts per period with 2 weekend shifts (Sat + Sun).
+
+**Sheet codes:**
+- X = desired shift
+- W = scheduled block shift (PT workers only)
+
+**Viewing:**
+- Employees, schedulers, and management can all view each employee's availability sheet.
+- The app shows management which employees are available for a given open shift, in rotation order, based on their availability sheet — management view only.
+
+---
+
+## 16. Notifications
+
+Every action below triggers both **in-app notification AND email** to all relevant parties:
+
+- Book-off submitted / approved / denied / attempted under 24hr
+- Switch proposed / agreed / declined / approved / denied by management
+- OT offered / taken / refused
+- Schedule updated (live on the days indicated per §17)
+- Account status changed (suspended / terminated / reinstated)
+- Mass communication sent
+- On-call assignment changed
+- Availability sheet submitted / late / changed
+- 3 consecutive weekend book-offs alert to management
+- LOS assignment created or changed (management + affected employee only)
+
+All automatic notification messages should be editable by management.
+
+---
+
+## 17. Schedule Updates — Timing & Routing
+
+- Live schedule updates published on **Monday, Wednesday, and Friday**; update dates clearly indicated at the top of the schedule.
+- Requests and updates received:
+  - Mon–Fri 9:00–17:00 → Scheduling Admin
+  - After 17:00 and weekends → On-call manager
+- Employees see live schedule updates on those days in their app.
+
+---
+
+## 18. Color Codes & Schedule Symbols
+
+| Symbol / Color | Meaning |
+|---|---|
+| Baby blue highlight on staff name | Overtime shift |
+| SW (Red) | Permanent switch |
+| SW (Black) | Temporary switch |
+| V | Vacation |
+| LIB | Liberation day |
+| Stat | Statutory holiday |
+| * (after a name) | Outsourced agency worker — not UTHC |
+| SH | Shadow shift (new employee) |
+| PXT | Training week |
+| ESC | Escort shift |
+| L.O.S. | Loan of Service |
+| SWG | Switch to Girls unit |
+| SWB | Switch to Boys unit |
+| TRAN | Transportation shift |
+| CNR | Cannot Replace — shift remains unfilled; notify management |
+| DNR | Do Not Replace — staff not needed on floor |
+
+---
+
+## 19. Non-Functional Requirements
+
+- **Role-based visibility** is a first-class requirement — not an afterthought. Multiple features depend on "visible to: this specific employee + management" as a data model pattern.
+- **Mobile-first responsive design** — staff are shift workers checking schedules from their phone.
+- **Progressive Web App (PWA)** — installable on phone home screens, works offline to a degree, capable of push notifications without an App Store release.
+- **Quebec Law 25 (Loi 25)** — confirm with CIUSSS IT/privacy contact whether provincial health-data privacy requirements apply to staff personal and leave data, and build accordingly.
+- **Data retention** — all historical schedule and staff data is retained even after an employee is suspended or terminated.
+- **Editable auto-messages** — management can edit the wording of all automatic system-generated messages.
+- **On-call package** — the system must be able to send or display an on-call package to managers containing: seniority list, availability sheets, most updated schedules, and employee contact numbers.
+- **Time adjustments** — management can make time adjustments (arrival/departure) and add internal notes on employees, visible to management only.
+
+---
+
+## 20. Suggested Phasing (for quoting purposes)
+
+**Phase 1 — Core (minimum viable launch)**
+- Authentication (incl. 12-month OTP, suspend/terminate)
+- All 6 schedule grids (4-week view, full roster, editable by management, read-only for employees)
+- Book-off requests + approval (incl. 24hr auto-deny)
+- Staff directory + seniority lists (reorderable)
+- Notifications (app + email) for the above
+
+**Phase 2 — Operational depth**
+- OT distribution queue and rotation logic
+- Shift switch request chain (employee↔employee↔management)
+- Schedule update timing and routing
+- Staff on Leave tracker (incl. progressive return, restricted visibility)
+- Transport & Escort memos (linked to TRAN/ESC cells)
+- Last-minute cover logic (under 2 hours)
+- 3 consecutive weekend book-off alert
+
+**Phase 3 — Extended features**
+- Coworker direct messaging
+- Availability sheet digital submission, late detection, and rotation placement
+- Loan of Service tracking
+- Mass communications log with editable auto-message templates
+- On-call manager assignment, on-call package view
+- Staff directory contact screen (browsable by employees)
+
+---
+
+## Appendix: Source Materials Provided by Client
+
+- Schedule documents: Boys/Girls × Educators/IA Day-Eve/Overnight — Pay Periods 07–08
+- Educators Seniority List, PP 18
+- Intervention Agents Seniority List, PP 18
+- Full staff contact directory (all roles, phones, emails)
+- Educator and IA Availability Sheets, PP 07–08
+- Book-off request log, PP 07–08
+- Internal scheduling procedures and guidelines document
+- Interactive HTML/CSS/JS prototype (see live link and zip files)
+
+---
+
+## Live Prototype
+
+**https://claude.ai/artifact/NaCK1Mj3exjsN87CGXeDd8**
+
+Click to open the full interactive prototype — no download needed, works on phone or computer.
+

@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>UTHC Scheduling — 03. Overtime Distribution & Book-off Requests</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg-2:#fff; --bg-3:#ebe9e3; --border:#ddd9d0;
+  --text-1:#2b2a27; --text-2:#6b6962; --text-3:#9a978d;
+  --blue:#185FA5; --blue-dark:#0C447C; --blue-light:#E6F1FB;
+  --green:#27500A; --green-light:#EAF3DE; --green-mid:#97C459;
+  --amber:#633806; --amber-light:#FAEEDA;
+  --red:#791F1F; --red-light:#FCEBEB;
+  --radius-md:8px; --radius-lg:14px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:var(--text-1);background:var(--bg-3);font-size:13px}
+.note{background:#FFF7E0;border:1px solid #E8D48A;border-radius:var(--radius-md);padding:10px 14px;font-size:12px;color:#6b5610;margin:14px auto;max-width:1000px}
+.stage{min-height:90vh;display:flex;flex-direction:column;align-items:center;padding:1.5rem}
+.tabs{display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap;justify-content:center}
+.tabbtn{padding:5px 14px;border-radius:var(--radius-md);border:1px solid var(--border);font-size:12px;cursor:pointer;font-weight:500;background:var(--bg-2);color:var(--text-2)}
+.tabbtn.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+.screen{display:none;width:100%;justify-content:center}
+.screen.active{display:flex}
+.dash{width:100%;max-width:760px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+.dtop{display:flex;align-items:center;gap:8px;padding:.8rem 1.1rem;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.dtitle{font-size:15px;font-weight:600}
+.dsub{font-size:11px;color:var(--text-3)}
+.dbody{padding:1.1rem}
+.info-box{background:var(--blue-light);color:var(--blue-dark);border:1px solid #B5D4F4;border-radius:var(--radius-md);padding:8px 11px;font-size:12px;margin-bottom:.8rem;display:flex;gap:6px}
+.warn-box{background:var(--red-light);color:var(--red);border:1px solid #F09595;border-radius:var(--radius-md);padding:8px 11px;font-size:12px;margin-top:.6rem;display:none}
+table{width:100%;font-size:12px;border-collapse:collapse}
+th{text-align:left;padding:6px 8px;font-size:11px;font-weight:600;color:var(--text-2);background:var(--bg-3)}
+td{padding:7px 8px;border-bottom:1px solid var(--border);vertical-align:middle}
+.mbtn{padding:5px 11px;border-radius:var(--radius-md);border:1px solid #ccc;background:var(--bg-2);font-size:11px;cursor:pointer}
+.mbtn:hover{background:var(--bg-3)}
+.mbtn.pri{background:var(--blue);color:#fff;border-color:var(--blue)}
+.mbtn.grn{background:var(--green-light);color:var(--green);border-color:var(--green-mid)}
+.mbtn.red{background:var(--red-light);color:var(--red);border-color:#F09595}
+.badge{font-size:10px;padding:2px 8px;border-radius:4px;font-weight:600}
+.b-ft{background:var(--green-light);color:var(--green)}
+.b-pt{background:var(--blue-light);color:var(--blue-dark)}
+.b-rc{background:#EEEDFE;color:#3C3489}
+
+.field{margin-bottom:.85rem}
+.field label{display:block;font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:4px}
+.field input,.field textarea{width:100%;padding:8px 10px;border-radius:var(--radius-md);border:1px solid var(--border);font-size:12px}
+.ltabs{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}
+.ltab{padding:5px 12px;border-radius:var(--radius-md);border:1px solid var(--border);font-size:11px;cursor:pointer;background:var(--bg-2);color:var(--text-2)}
+.ltab.on{background:var(--blue-light);color:var(--blue-dark);border-color:#85B7EB;font-weight:600}
+.btn{width:100%;padding:9px 0;border-radius:var(--radius-md);background:var(--blue);color:#fff;border:none;font-size:12px;font-weight:600;cursor:pointer;margin-top:.4rem}
+.btn:hover{background:var(--blue-dark)}
+.leave-err{display:none;color:var(--red);font-size:11px;margin-bottom:.5rem}
+</style>
+</head>
+<body>
+
+<div class="note">PROTOTYPE FILE — visual mockup only. See FEATURE_SPEC.md §6 (Overtime) and §7.1 (Book-off requests) for full behavior rules.</div>
+
+<div class="stage">
+<div class="tabs">
+  <button class="tabbtn on" onclick="showS('ot',this)">1. Overtime distribution (management)</button>
+  <button class="tabbtn" onclick="showS('bookoff-list',this)">2. Book-off requests (management queue)</button>
+  <button class="tabbtn" onclick="showS('bookoff-form',this)">3. Book-off request form (employee)</button>
+</div>
+
+<!-- OT DISTRIBUTION -->
+<div id="screen-ot" class="screen active">
+  <div class="dash">
+    <div class="dtop"><div><div class="dtitle">Overtime distribution</div><div class="dsub">Boys Educators — Sat Jun 20, Evening shift (S1, 15:00–22:45)</div></div></div>
+    <div class="dbody">
+      <div class="info-box">ℹ️ Offer order: Full-time by seniority → Part-time by rotation → Recall → Agency. No junior FT staff may hold more OT than a senior FT staff member. T = Taken (email confirmation to both parties; cover name appears on schedule). R = Refused (email with date/time, copy to manager; auto-advances to next person).</div>
+      <div style="font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:.5rem;text-transform:uppercase">Step 1 — Full-time educators, by seniority</div>
+      <table>
+        <thead><tr><th>#</th><th>Name</th><th>Status</th><th>Seniority</th><th>Last OT given</th><th>Action</th></tr></thead>
+        <tbody id="ot-tbody-ft"></tbody>
+      </table>
+      <div style="font-size:11px;font-weight:600;color:var(--text-2);margin:.9rem 0 .5rem;text-transform:uppercase">Step 2 — Part-time educators, by rotation</div>
+      <table>
+        <thead><tr><th>#</th><th>Name</th><th>Status</th><th>OT count this PP</th><th>Action</th></tr></thead>
+        <tbody id="ot-tbody-pt"></tbody>
+      </table>
+      <div style="font-size:11px;color:var(--text-3);margin-top:.8rem">Step 3 (Recall) and Step 4 (Agency) appear only if all FT and PT staff decline.</div>
+    </div>
+  </div>
+</div>
+
+<!-- BOOK-OFF MANAGEMENT QUEUE -->
+<div id="screen-bookoff-list" class="screen">
+  <div class="dash">
+    <div class="dtop"><div><div class="dtitle">Book-off requests</div><div class="dsub">PP 07–08 — pending management approval</div></div></div>
+    <div class="dbody">
+      <div class="info-box">ℹ️ Requests submitted &lt;24hrs before the shift are auto-denied before reaching this queue. 3+ consecutive days off is auto-flagged as a vacation request. 3 consecutive weekend book-offs trigger a separate alert.</div>
+      <table id="bo-table"></table>
+    </div>
+  </div>
+</div>
+
+<!-- BOOK-OFF EMPLOYEE FORM -->
+<div id="screen-bookoff-form" class="screen">
+  <div class="dash" style="max-width:420px">
+    <div class="dtop"><div><div class="dtitle">Request a book-off</div><div class="dsub">Employee-submitted</div></div></div>
+    <div class="dbody">
+      <div class="field"><label>Date(s) requesting off</label><input type="date" id="bo-date" onchange="check24(this.value)"></div>
+      <div class="warn-box" id="under24-warn">🚫 Less than 24 hours away — this request cannot be submitted. Please contact management directly. Management has been notified of this attempt.</div>
+      <div class="field"><label>Type of leave <span style="color:var(--red)">* required to continue</span></label>
+        <div class="ltabs">
+          <div class="ltab" onclick="selLeave(this,'Vacation')">Vacation</div>
+          <div class="ltab" onclick="selLeave(this,'Sick')">Sick</div>
+          <div class="ltab" onclick="selLeave(this,'Stat')">Stat</div>
+          <div class="ltab" onclick="selLeave(this,'Psychosocial')">Psychosocial</div>
+          <div class="ltab" onclick="selLeave(this,'LIB')">LIB</div>
+          <div class="ltab" onclick="selLeave(this,'Mat leave')">Mat leave</div>
+        </div>
+      </div>
+      <div class="leave-err" id="leave-err">⚠️ Please select a leave type to continue.</div>
+      <div class="field"><label>Notes (optional)</label><input type="text" placeholder="Any additional details..."></div>
+      <button class="btn" onclick="submitBO()">Submit request</button>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+function otRow(rank,name,status,extra,col4label){
+  return '<tr><td>'+rank+'</td><td style="font-weight:600">'+name+'</td><td><span class="badge '+status.cls+'">'+status.label+'</span></td><td>'+extra+'</td><td>'+
+    '<button class="mbtn grn" onclick="otAction(\''+name+'\',\'T\')">T — Taken</button> '+
+    '<button class="mbtn red" onclick="otAction(\''+name+'\',\'R\')">R — Refused</button></td></tr>';
+}
+document.getElementById('ot-tbody-ft').innerHTML=
+  otRow(1,'Gilles Lezi',{cls:'b-ft',label:'FT'},'15.56 yrs · Jun 7') +
+  otRow(2,'Eddy Bathalien',{cls:'b-ft',label:'FT'},'15.34 yrs · Jun 5') +
+  otRow(3,'Makeda Samuels',{cls:'b-ft',label:'FT'},'15.26 yrs · Jun 10') +
+  otRow(4,'Michael Flemming',{cls:'b-ft',label:'FT'},'14.95 yrs · Jun 3');
+document.getElementById('ot-tbody-pt').innerHTML=
+  otRow(5,'Yvonne Kaberamanzi',{cls:'b-pt',label:'PT'},'1') +
+  otRow(6,'Wesley Thomas',{cls:'b-pt',label:'PT'},'0');
+
+function otAction(name,action){
+  if(action==='T') alert(name+' accepted the shift.\n\nEmail confirmation sent to '+name+' and management. Their name now appears as the cover on the schedule.');
+  else alert(name+' refused the shift.\n\nEmail sent to '+name+' with manager copied, logged with date/time. Moving to next person in rotation.');
+}
+
+const bos=[
+  {emp:'Kerwin Guy-Roach',dates:'Jul 8',type:'Family',status:'pending'},
+  {emp:'Tharani Siwalingam',dates:'Jun 23, Jun 26',type:'Vacation',status:'pending'},
+  {emp:'Shannon Ridley',dates:'Jun 17, Jul 3, Jul 9',type:'Vacation',status:'pending'},
+  {emp:'Eddy Bathalien',dates:'Jun 14, Jun 19',type:'Stat',status:'approved'},
+  {emp:'Paul Vincent',dates:'Jul 4, Jul 5',type:'Vacation',status:'pending'},
+];
+function renderBO(){
+  const t=document.getElementById('bo-table');
+  t.innerHTML='<thead><tr><th>Employee</th><th>Date(s)</th><th>Type</th><th>Action</th></tr></thead><tbody>'+
+    bos.map((r,i)=>'<tr><td style="font-weight:600">'+r.emp+'</td><td>'+r.dates+'</td><td>'+r.type+'</td><td>'+
+      (r.status==='approved'?'<span style="color:var(--green);font-size:11px">✓ Approved</span>':
+        '<button class="mbtn grn" onclick="approveBO('+i+')">Approve</button> <button class="mbtn red" onclick="denyBO('+i+')">Deny</button>')
+      +'</td></tr>').join('')+'</tbody>';
+}
+function approveBO(i){bos[i].status='approved';renderBO();}
+function denyBO(i){bos.splice(i,1);renderBO();}
+renderBO();
+
+let selLeaveVal='';
+function selLeave(el,v){
+  document.querySelectorAll('.ltab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+  selLeaveVal=v;
+  document.getElementById('leave-err').style.display='none';
+}
+function check24(v){
+  const warn=document.getElementById('under24-warn');
+  if(!v){warn.style.display='none';return;}
+  const diff=(new Date(v+'T00:00:00')-new Date())/(1000*60*60);
+  warn.style.display=diff<24?'block':'none';
+}
+function submitBO(){
+  if(!selLeaveVal){document.getElementById('leave-err').style.display='block';return;}
+  const d=document.getElementById('bo-date').value;
+  if(!d){alert('Please select a date.');return;}
+  alert('Your '+selLeaveVal+' book-off for '+d+' has been sent to management for approval.\n\nNotification sent via app + email.');
+}
+
+function showS(id,btn){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+  document.querySelectorAll('.tabbtn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+}
+</script>
+</body>
+</html>
